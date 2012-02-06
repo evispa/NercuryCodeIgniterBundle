@@ -5,14 +5,19 @@
     xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <parameters>
-        <parameter key="nercury_code_igniter.example.class">Nercury\CodeIgniterBundle\CiRequestListenerService</parameter>
+        <parameter key="nercury_code_igniter.request_listener.class">Nercury\CodeIgniterBundle\CiRequestListenerService</parameter>
+        <parameter key="nercury_code_igniter.helper.class">Nercury\CodeIgniterBundle\CiHelperService</parameter>
+        <parameter key="nercury_code_igniter.configuration" />
     </parameters>
 
     <services>
-        <service id="nercury_code_igniter.example" class="%nercury_code_igniter.example.class%">
-            <argument type="service" id="service_id" />
-            <argument>plain_value</argument>
-            <argument>%parameter_name%</argument>
+        <service id="kernel.listener.nercury_code_igniter_listener" class="%nercury_code_igniter.request_listener.class%">
+            <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" />
+            <argument type="service" id="nercury_code_igniter.helper" />
+        </service>
+        <service id="nercury_code_igniter.helper" class="%nercury_code_igniter.helper.class%">
+            <argument>%nercury_code_igniter.configuration%</argument>
+            <argument type="service" id="logger" />
         </service>
     </services>
 
