@@ -36,6 +36,12 @@ class CiHelperService {
      * @var \Monolog\Logger 
      */
     protected $logger;
+    
+    /**
+     *
+     * @var \Symfony\Component\HttpKernel\Kernel 
+     */
+    protected $kernel;
 
     /**
      *
@@ -45,8 +51,9 @@ class CiHelperService {
     protected $app_path = false;
     protected $system_path = false;
 
-    public function __construct($config, $logger, $event_dispatcher) {
+    public function __construct($config, $logger, $kernel, $event_dispatcher) {
         $this->config = $config;
+        $this->kernel = $kernel;
         $this->logger = $logger;
         $this->event_dispatcher = $event_dispatcher;
         $this->app_path = realpath($config['application_path']);
@@ -171,7 +178,7 @@ class CiHelperService {
          * And away we go...
          *
          */
-        \ci_bootstrap();
+        \ci_bootstrap($this->kernel);
   
         $output = ob_get_clean();
 

@@ -1,6 +1,6 @@
 <?php
 
-function ci_bootstrap() {
+function ci_bootstrap($kernel) {
     global $assign_to_config;
     global $BM;
     global $CFG;
@@ -297,6 +297,9 @@ function ci_bootstrap() {
     $BM->mark('controller_execution_time_( ' . $class . ' / ' . $method . ' )_start');
 
     $CI = new $class();
+
+    /**** MODIFICATION FOR SYMFONY ****/
+    $CI->symfony = $kernel->getContainer();
 
     /*
      * ------------------------------------------------------
