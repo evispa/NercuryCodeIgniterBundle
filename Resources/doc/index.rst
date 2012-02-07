@@ -1,7 +1,7 @@
 What it is
 ==========
 
-Integrates CodeIgniter as a bundle in Symfony 2.
+Integrates CodeIgniter as a bundle in Symfony2.
 
 Usage
 =====
@@ -26,4 +26,11 @@ To get CI response in symfony controller, use::
 
     $response = $this->get("nercury_code_igniter.helper")->getResponse($request);
 
-Thats it for now. Patches are welcome.
+Symfony2 container is available to CodeIgniter like a library. For example, to get a doctrine service in 
+CI controller, call::
+
+    $this->symfony->get('doctrine');
+
+That's it for now.
+
+Contributions are welcome.
