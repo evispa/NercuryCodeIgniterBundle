@@ -2,47 +2,183 @@
 
 namespace Nercury\CodeIgniterBundle;
 
+use Symfony\Component\HttpFoundation\Request;
+
 /**
  * Description of CiHelperService
  *
  * @author nercury
  */
 class CiHelperService {
-    
+
     /**
      * @var array 
      */
-    private $config;
-    
+    protected $config;
+
     /**
      * @var \Monolog\Logger 
      */
-    private $logger;
-    
-    private $app_path = false;
-    private $system_path = false;
-    
-    public function __construct($config, $logger) {
+    protected $logger;
+
+    /**
+     *
+     * @var \Symfony\Component\EventDispatcher\EventDispatcher
+     */
+    protected $event_dispatcher;
+    protected $app_path = false;
+    protected $system_path = false;
+
+    public function __construct($config, $logger, $event_dispatcher) {
         $this->config = $config;
         $this->logger = $logger;
-        $this->app_path = realpath($config['application_path'].'as');
+        $this->event_dispatcher = $event_dispatcher;
+        $this->app_path = realpath($config['application_path']);
         $this->system_path = realpath($config['system_path']);
     }
-    
-    private function isConfigValid() {
+
+    protected function isConfigValid() {
         return $this->app_path !== false && $this->system_path !== false;
     }
-    
-    public function hasMethod($controller, $method) {
+
+    public function resolveCiActions(Request $request) {
+        $event = new CiActionResolveEvent($request);
+        $this->event_dispatcher->dispatch('nercury.ci_action_resolve', $event);
+        return $event->getResolvedActions();
+    }
+
+    /**
+     * Get physical controller file name based on it's name
+     * 
+     * @param string $controllerName
+     * @return string 
+     */
+    public function getControllerFile($controllerName) {
+        return $this->getAppPath() . '/controllers/' . $controllerName . '.php';
+    }
+
+    public function hasController($controller) {
         if (!$this->isConfigValid())
             return false;
-        
+
+        $controller_file = $this->getControllerFile($controller);
+
+        if (file_exists($controller_file))
+            return true;
     }
-    
-    public function forwardTo($controller, $method) {
+
+    function getRelativePath($from, $to) {
+        $from = explode('/', $from);
+        $to = explode('/', $to);
+        $relPath = $to;
+
+        foreach ($from as $depth => $dir) {
+            // find first non-matching dir
+            if ($dir === $to[$depth]) {
+                // ignore this directory
+                array_shift($relPath);
+            } else {
+                // get number of remaining dirs to $from
+                $remaining = count($from) - $depth;
+                if ($remaining > 1) {
+                    // add traversals up to first matching dir
+                    $padLength = (count($relPath) + $remaining - 1) * -1;
+                    $relPath = array_pad($relPath, $padLength, '..');
+                    break;
+                } else {
+                    $relPath[0] = $relPath[0];
+                }
+            }
+        }
+        return implode('/', $relPath);
+    }
+
+    /**
+     * Return response from CI
+     * 
+     * @param Request $request
+     * @return \Symfony\Component\HttpFoundation\Response
+     * @throws Exception 
+     */
+    public function getResponse(Request $request) {
         if (!$this->isConfigValid())
-            return false;
+            throw new Exception('Code Igniter configuration is not valid.');
+
+        require_once __DIR__.'/ci_bootstrap.php';
         
+        $script_file = '.' . $request->getBasePath() . $request->getScriptName();
+        $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
+        $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
+        
+        error_reporting(error_reporting() ^ E_NOTICE); // code igniter likes notices
+        
+        /*
+         * -------------------------------------------------------------------
+         *  Now that we know the path, set the main path constants
+         * -------------------------------------------------------------------
+         */
+        // The name of THIS file
+        define('SELF', pathinfo($script_file, PATHINFO_BASENAME));
+
+        // The PHP file extension
+        // this global constant is deprecated.
+        define('EXT', '.php');
+
+        // Path to the system folder
+        define('BASEPATH', str_replace("\\", "/", $system_path));
+
+        // Path to the front controller (this file)
+        define('FCPATH', str_replace(SELF, '', __FILE__));
+
+        // Name of the "system folder"
+        define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
+
+
+        // The path to the "application" folder
+        if (is_dir($application_folder)) {
+            define('APPPATH', $application_folder . '/');
+        } else {
+            if (!is_dir(BASEPATH . $application_folder . '/')) {
+                exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
+            }
+
+            define('APPPATH', BASEPATH . $application_folder . '/');
+        }
+
+        ob_start();
+        
+        /*
+         * --------------------------------------------------------------------
+         * LOAD THE BOOTSTRAP FILE
+         * --------------------------------------------------------------------
+         *
+         * And away we go...
+         *
+         */
+        \ci_bootstrap();
+  
+        $output = ob_get_clean();
+
+        return new \Symfony\Component\HttpFoundation\Response($output);
     }
-    
+
+    /**
+     * Returns CI APPPATH
+     * 
+     * @return string Returns FALSE if path was not defined in config
+     */
+    public function getAppPath() {
+        return $this->app_path;
+    }
+
+    /**
+     * Returns CI system path
+     * 
+     * @return string Returns FALSE if path was not defined in config
+     */
+    public function getSystemPath() {
+        return $this->system_path;
+    }
+
 }
+
