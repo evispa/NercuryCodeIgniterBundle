@@ -1,0 +1,24 @@
+{
+    "name":         "nercury/code-igniter-bundle",
+    "description":  "Allows loading Code Igniter as a bundle and eases migration to Symfony.",
+    "keywords":     ["codeigniter", "code-igniter", "migration", "ci"],
+    "homepage": "https://github.com/Nercury/NercuryCodeIgniterBundle",
+    "type":         "symfony-bundle",
+    "license":      "Apache",
+    "authors": [
+    {
+        "name":   "Nerijus Arlauskas",
+        "email":  "nercury@gmail.com"
+    }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "symfony/symfony" : ">=2.0"
+    },
+    "autoload": {
+        "psr-0": {
+            "Nercury\\CodeIgniterBundle": ""
+        }
+    },
+    "target-dir": "Nercury/CodeIgniterBundle"
+}
