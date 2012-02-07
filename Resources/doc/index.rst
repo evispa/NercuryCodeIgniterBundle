@@ -31,9 +31,9 @@ CI controller, call::
 
     $this->symfony->get('doctrine');
 
-To use Symfony2 database configuration in CodeIgniter, do this in datapase.php config file :)::
+To use Symfony2 database configuration in CodeIgniter, do this in datapase.php config file ::
 
-    $connection = $GLOBALS['CI_symfony']->get('doctrine')->getConnection();
+    $connection = $GLOBALS['CI_symfony']->get('doctrine')->getConnection(); // :)
     
     $db['default']['hostname'] = $connection->getHost();
     $db['default']['username'] = $connection->getUsername();
