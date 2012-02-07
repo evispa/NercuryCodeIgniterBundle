@@ -34,23 +34,16 @@ class DefaultCiActionResolver {
     public function onActionResolveEvent(CiActionResolveEvent $event) {
         $path = $event->getRequest()->getPathInfo();
         $parts = explode('/', substr($path, 1));
+        $index_of_first = 0;
+        
         if (count($parts) > 1) {
-            $controller_path = '';
-            for ($i = 0; $i < count($parts) && $i < 10; $i++) {
-                if ($controller_path == '')
-                    $controller_path = $parts[$i];
-                else
-                    $controller_path .= '/'.$parts[$i];
-                $next = $i < count($parts) - 1 ? $parts[$i + 1] : false;
-                if ($next !== false)
-                    $event->addPossibleAction($controller_path, $next);
-                $event->addPossibleAction($controller_path, 'index');
+            if (false !== strpos($parts[0], '.php')) {
+                $index_of_first++;
             }
-            
-            // add routes in case first part is a language string, i.e /en/...
-            if (count($parts) > 2 && strlen($parts[0]) > 1 && strlen($parts[0]) <= 2) {
+
+            if (count($parts) > $index_of_first + 1) {
                 $controller_path = '';
-                for ($i = 1; $i < count($parts) && $i < 10; $i++) {
+                for ($i = $index_of_first; $i < count($parts) && $i < 10; $i++) {
                     if ($controller_path == '')
                         $controller_path = $parts[$i];
                     else
@@ -59,6 +52,21 @@ class DefaultCiActionResolver {
                     if ($next !== false)
                         $event->addPossibleAction($controller_path, $next);
                     $event->addPossibleAction($controller_path, 'index');
+                }
+
+                // add routes in case first part is a language string, i.e /en/...
+                if (count($parts) > $index_of_first + 2 && strlen($parts[0]) > 1 && strlen($parts[0]) <= 2) {
+                    $controller_path = '';
+                    for ($i = 1; $i < count($parts) && $i < 10; $i++) {
+                        if ($controller_path == '')
+                            $controller_path = $parts[$i];
+                        else
+                            $controller_path .= '/'.$parts[$i];
+                        $next = $i < count($parts) - 1 ? $parts[$i + 1] : false;
+                        if ($next !== false)
+                            $event->addPossibleAction($controller_path, $next);
+                        $event->addPossibleAction($controller_path, 'index');
+                    }
                 }
             }
         }
