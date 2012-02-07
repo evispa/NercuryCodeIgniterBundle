@@ -1,3 +1,8 @@
+What it is
+==========
+
+Integrates CodeIgniter as a bundle in Symfony 2.
+
 Usage
 =====
 
