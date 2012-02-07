@@ -12,6 +12,8 @@ function ci_bootstrap($kernel) {
     global $IN;
     global $LANG;
     
+    $GLOBALS['CI_symfony'] = $kernel->getContainer();
+    
     /**
      * CodeIgniter
      *
@@ -299,7 +301,7 @@ function ci_bootstrap($kernel) {
     $CI = new $class();
 
     /**** MODIFICATION FOR SYMFONY ****/
-    $CI->symfony = $kernel->getContainer();
+    $CI->symfony = $CI_symfony;
 
     /*
      * ------------------------------------------------------
