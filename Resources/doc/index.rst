@@ -33,12 +33,13 @@ To get CI response in any symfony controller, use::
     $response = $this->get("ci")->getResponse($request);
 
 This method will redirect request handling to CodeIgniter and it's routing.
-The need might arise just to use some legacy CodeIgniter code in libraries, modules or even helpers.
+
+The need might arise just to use some legacy CodeIgniter code to get libraries, modules or even helpers.
 In that case, you can get CI instance::
 
     $CI = & $this->get("ci")->getInstance();
     
-In case "getResponse" was called before, it would return the controller used.
+In case "getResponse" was called before, it will return the controller used.
 Otherwise, a fake controller instance will be created. Therefore "getResponse" can not
 be used if "getInstance" was called.
 
@@ -49,6 +50,8 @@ CI controller, call::
 
 To use Symfony2 database configuration in CodeIgniter, do this in database.php config file ::
 
+    <?php 
+    
     $connection = $GLOBALS['CI_symfony']->get('doctrine')->getConnection(); // :)
     
     $db['default']['hostname'] = $connection->getHost();
