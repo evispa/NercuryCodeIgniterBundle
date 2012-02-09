@@ -27,6 +27,7 @@ class Configuration implements ConfigurationInterface
         $rootNode->children()
             ->scalarNode('application_path')->end()
             ->scalarNode('system_path')->end()
+            ->booleanNode('detect_controllers')->defaultTrue()->end()
         ->end();
         
         return $treeBuilder;

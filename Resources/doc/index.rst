@@ -21,10 +21,26 @@ In config.yml, specify paths to CodeIgniter directories::
         system_path: %kernel.root_dir%/../CodeIgniter_210/system
 
 Bundle uses a bit of code from CodeIgniter 2.1.0, so it should work the best with 2.1.0 version.
-In case it fails, relevant code is in CiHelperService::getResponse and ci_bootstrap.php.
-To get CI response in symfony controller, use::
+Bundle automatically tries to detect code igniter controllers based on current URL.
+To disable this add the following line to config.yml::
 
-    $response = $this->get("nercury_code_igniter.helper")->getResponse($request);
+    nercury_code_igniter:
+        ...
+        detect_controllers: false
+
+To get CI response in any symfony controller, use::
+
+    $response = $this->get("ci")->getResponse($request);
+
+This method will redirect request handling to CodeIgniter and it's routing.
+The need might arise just to use some legacy CodeIgniter code in libraries, modules or even helpers.
+In that case, you can get CI instance::
+
+    $CI = & $this->get("ci")->getInstance();
+    
+In case "getResponse" was called before, it would return the controller used.
+Otherwise, a fake controller instance will be created. Therefore "getResponse" can not
+be used if "getInstance" was called.
 
 Symfony2 container is available to CodeIgniter like a library. For example, to get a doctrine service in 
 CI controller, call::

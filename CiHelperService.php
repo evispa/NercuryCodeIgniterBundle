@@ -66,7 +66,8 @@ class CiHelperService {
 
     public function resolveCiActions(Request $request) {
         $event = new CiActionResolveEvent($request);
-        $this->event_dispatcher->dispatch('nercury.ci_action_resolve', $event);
+        if ($this->config['detect_controllers'] !== false)
+            $this->event_dispatcher->dispatch('nercury.ci_action_resolve', $event);
         return $event->getResolvedActions();
     }
 
