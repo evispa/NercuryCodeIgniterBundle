@@ -50,8 +50,6 @@ CI controller, call::
 
 To use Symfony2 database configuration in CodeIgniter, do this in database.php config file ::
 
-    <?php 
-    
     $connection = $GLOBALS['CI_symfony']->get('doctrine')->getConnection(); // :)
     
     $db['default']['hostname'] = $connection->getHost();
