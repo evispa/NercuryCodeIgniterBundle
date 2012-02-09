@@ -1,6 +1,6 @@
 <?php
 
-function ci_bootstrap($kernel) {
+function ci_bootstrap($kernel, $load_fake_controller = false) {
     global $assign_to_config;
     global $BM;
     global $CFG;
@@ -176,13 +176,21 @@ function ci_bootstrap($kernel) {
      * ------------------------------------------------------
      */
     $RTR = load_class('Router', 'core');
-    $RTR->_set_routing();
+    
+    /** MODIFICATION FOR SYMFONY (add) */
+    if (!$load_fake_controller) {
+    /** END */
+     
+        $RTR->_set_routing();
+        // Set any routing overrides that may exist in the main index file
+        if (isset($routing)) {
+            $RTR->_set_overrides($routing);
+        }
 
-    // Set any routing overrides that may exist in the main index file
-    if (isset($routing)) {
-        $RTR->_set_overrides($routing);
+    /** MODIFICATION FOR SYMFONY (add) */
     }
-
+    /** END */
+    
     /*
      * ------------------------------------------------------
      *  Instantiate the output class
@@ -235,94 +243,57 @@ function ci_bootstrap($kernel) {
         return CI_Controller::get_instance();
     }
 
+    /** MODIFICATION FOR SYMFONY (add) */
+    $base_controller_class = 'CI_Controller';
+    /** END */
+    
     if (file_exists(APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php')) {
         require APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php';
+        /** MODIFICATION FOR SYMFONY (add) */
+        $base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+        /** END */
     }
 
-    // Load the local application controller
-    // Note: The Router class automatically validates the controller path using the router->_validate_request().
-    // If this include fails it means that the default controller in the Routes.php file is not resolving to something valid.
-    if (!file_exists(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php')) {
-        show_error('Unable to load your default controller. Please make sure the controller specified in your Routes.php file is valid.');
+    /** MODIFICATION FOR SYMFONY (add) */
+    if (!$load_fake_controller) {
+    /** END */
+        
+        // Load the local application controller
+        // Note: The Router class automatically validates the controller path using the router->_validate_request().
+        // If this include fails it means that the default controller in the Routes.php file is not resolving to something valid.
+        if (!file_exists(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php')) {
+            show_error('Unable to load your default controller. Please make sure the controller specified in your Routes.php file is valid.');
+        }
+
+        include(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php');
+
+    /** MODIFICATION FOR SYMFONY (add) */
     }
-
-    include(APPPATH . 'controllers/' . $RTR->fetch_directory() . $RTR->fetch_class() . '.php');
-
+    /** END */
+    
     // Set a mark point for benchmarking
     $BM->mark('loading_time:_base_classes_end');
 
-    /*
-     * ------------------------------------------------------
-     *  Security check
-     * ------------------------------------------------------
-     *
-     *  None of the functions in the app controller or the
-     *  loader class can be called via the URI, nor can
-     *  controller functions that begin with an underscore
-     */
-    $class = $RTR->fetch_class();
-    $method = $RTR->fetch_method();
+    /** MODIFICATION FOR SYMFONY (add) */
+    if (!$load_fake_controller) {
+    /** END */
 
-    if (!class_exists($class)
-            OR strncmp($method, '_', 1) == 0
-            OR in_array(strtolower($method), array_map('strtolower', get_class_methods('CI_Controller')))
-    ) {
-        if (!empty($RTR->routes['404_override'])) {
-            $x = explode('/', $RTR->routes['404_override']);
-            $class = $x[0];
-            $method = (isset($x[1]) ? $x[1] : 'index');
-            if (!class_exists($class)) {
-                if (!file_exists(APPPATH . 'controllers/' . $class . '.php')) {
-                    show_404("{$class}/{$method}");
-                }
+        /*
+        * ------------------------------------------------------
+        *  Security check
+        * ------------------------------------------------------
+        *
+        *  None of the functions in the app controller or the
+        *  loader class can be called via the URI, nor can
+        *  controller functions that begin with an underscore
+        */
+        $class = $RTR->fetch_class();
+        $method = $RTR->fetch_method();
 
-                include_once(APPPATH . 'controllers/' . $class . '.php');
-            }
-        } else {
-            show_404("{$class}/{$method}");
-        }
-    }
-
-    /*
-     * ------------------------------------------------------
-     *  Is there a "pre_controller" hook?
-     * ------------------------------------------------------
-     */
-    $EXT->_call_hook('pre_controller');
-
-    /*
-     * ------------------------------------------------------
-     *  Instantiate the requested controller
-     * ------------------------------------------------------
-     */
-    // Mark a start point so we can benchmark the controller
-    $BM->mark('controller_execution_time_( ' . $class . ' / ' . $method . ' )_start');
-
-    $CI = new $class();
-
-    /**** MODIFICATION FOR SYMFONY ****/
-    $CI->symfony = $CI_symfony;
-
-    /*
-     * ------------------------------------------------------
-     *  Is there a "post_controller_constructor" hook?
-     * ------------------------------------------------------
-     */
-    $EXT->_call_hook('post_controller_constructor');
-
-    /*
-     * ------------------------------------------------------
-     *  Call the requested method
-     * ------------------------------------------------------
-     */
-    // Is there a "remap" function? If so, we call it instead
-    if (method_exists($CI, '_remap')) {
-        $CI->_remap($method, array_slice($URI->rsegments, 2));
-    } else {
-        // is_callable() returns TRUE on some versions of PHP 5 for private and protected
-        // methods, so we'll use this workaround for consistent behavior
-        if (!in_array(strtolower($method), array_map('strtolower', get_class_methods($CI)))) {
-            // Check and see if we are using a 404 override and use it.
+        if (!class_exists($class)
+                OR strncmp($method, '_', 1) == 0
+                OR in_array(strtolower($method), array_map('strtolower', get_class_methods('CI_Controller')))
+        ) {
             if (!empty($RTR->routes['404_override'])) {
                 $x = explode('/', $RTR->routes['404_override']);
                 $class = $x[0];
@@ -333,23 +304,119 @@ function ci_bootstrap($kernel) {
                     }
 
                     include_once(APPPATH . 'controllers/' . $class . '.php');
-                    unset($CI);
-                    $CI = new $class();
                 }
             } else {
                 show_404("{$class}/{$method}");
             }
         }
 
-        // Call the requested method.
-        // Any URI segments present (besides the class/function) will be passed to the method for convenience
-        call_user_func_array(array(&$CI, $method), array_slice($URI->rsegments, 2));
+    /** MODIFICATION FOR SYMFONY (add) */
     }
+    /** END */
+    
+    /*
+     * ------------------------------------------------------
+     *  Is there a "pre_controller" hook?
+     * ------------------------------------------------------
+     */
+    $EXT->_call_hook('pre_controller');
 
+    /*
+    * ------------------------------------------------------
+    *  Instantiate the requested controller
+    * ------------------------------------------------------
+    */
+    
+    /** MODIFICATION FOR SYMFONY (add) */
+    if ($load_fake_controller) {
+        $class = $base_controller_class;
+        
+        // Mark a start point so we can benchmark the controller
+        $BM->mark('controller_execution_time_( ' . $class . ' )_start');
+        
+    } else {
+    /** END */
+    
+        // Mark a start point so we can benchmark the controller
+        $BM->mark('controller_execution_time_( ' . $class . ' / ' . $method . ' )_start');
 
-    // Mark a benchmark end point
-    $BM->mark('controller_execution_time_( ' . $class . ' / ' . $method . ' )_end');
+    /** MODIFICATION FOR SYMFONY (add) */
+    }
+    /** END */
 
+    $CI = new $class();
+    
+    /** MODIFICATION FOR SYMFONY (add) ****/
+    $CI->symfony = $GLOBALS['CI_symfony'];
+    /** END */
+    
+    /*
+     * ------------------------------------------------------
+     *  Is there a "post_controller_constructor" hook?
+     * ------------------------------------------------------
+     */
+    $EXT->_call_hook('post_controller_constructor');
+    
+    /** MODIFICATION FOR SYMFONY (add) */
+    if (!$load_fake_controller) {
+    /** END */
+        
+        /*
+        * ------------------------------------------------------
+        *  Call the requested method
+        * ------------------------------------------------------
+        */
+        // Is there a "remap" function? If so, we call it instead
+        if (method_exists($CI, '_remap')) {
+            $CI->_remap($method, array_slice($URI->rsegments, 2));
+        } else {
+            // is_callable() returns TRUE on some versions of PHP 5 for private and protected
+            // methods, so we'll use this workaround for consistent behavior
+            if (!in_array(strtolower($method), array_map('strtolower', get_class_methods($CI)))) {
+                // Check and see if we are using a 404 override and use it.
+                if (!empty($RTR->routes['404_override'])) {
+                    $x = explode('/', $RTR->routes['404_override']);
+                    $class = $x[0];
+                    $method = (isset($x[1]) ? $x[1] : 'index');
+                    if (!class_exists($class)) {
+                        if (!file_exists(APPPATH . 'controllers/' . $class . '.php')) {
+                            show_404("{$class}/{$method}");
+                        }
+
+                        include_once(APPPATH . 'controllers/' . $class . '.php');
+                        unset($CI);
+                        $CI = new $class();
+                    }
+                } else {
+                    show_404("{$class}/{$method}");
+                }
+            }
+
+            // Call the requested method.
+            // Any URI segments present (besides the class/function) will be passed to the method for convenience
+            call_user_func_array(array(&$CI, $method), array_slice($URI->rsegments, 2));
+        }
+    
+    /** MODIFICATION FOR SYMFONY (add) */
+    }
+    /** END */
+
+    /** MODIFICATION FOR SYMFONY (add) */
+    if ($load_fake_controller) {
+        
+        // Mark a benchmark end point
+        $BM->mark('controller_execution_time_( ' . $class . ' )_end');
+        
+    } else {
+    /** END */
+
+        // Mark a benchmark end point
+        $BM->mark('controller_execution_time_( ' . $class . ' / ' . $method . ' )_end');
+
+    /** MODIFICATION FOR SYMFONY (add) */
+    }
+    /** END */
+    
     /*
      * ------------------------------------------------------
      *  Is there a "post_controller" hook?

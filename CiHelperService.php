@@ -116,6 +116,80 @@ class CiHelperService {
         return implode('/', $relPath);
     }
 
+    private $paths_initalized = false;
+    
+    /**
+     * Initialize code igniter system paths and defines
+     * 
+     * @param Request $request
+     * @throws Exception 
+     */
+    public function setCiPaths(Request $request) {
+        if (!$this->isConfigValid())
+            throw new Exception('Code Igniter configuration is not valid.');
+        
+        if ($this->paths_initalized === false) {
+            $script_file = '.' . $request->getBasePath() . $request->getScriptName();
+            $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
+            $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
+
+            error_reporting(error_reporting() ^ E_NOTICE); // code igniter likes notices
+
+            /*
+            * -------------------------------------------------------------------
+            *  Now that we know the path, set the main path constants
+            * -------------------------------------------------------------------
+            */
+            // The name of THIS file
+            define('SELF', pathinfo($script_file, PATHINFO_BASENAME));
+
+            // The PHP file extension
+            // this global constant is deprecated.
+            define('EXT', '.php');
+
+            // Path to the system folder
+            define('BASEPATH', str_replace("\\", "/", $system_path));
+
+            // Path to the front controller (this file)
+            define('FCPATH', str_replace(SELF, '', __FILE__));
+
+            // Name of the "system folder"
+            define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
+
+
+            // The path to the "application" folder
+            if (is_dir($application_folder)) {
+                define('APPPATH', $application_folder . '/');
+            } else {
+                if (!is_dir(BASEPATH . $application_folder . '/')) {
+                    exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
+                }
+
+                define('APPPATH', BASEPATH . $application_folder . '/');
+            }
+            
+            $this->paths_initalized = true;
+        }
+    }
+    
+    private $ci_loaded = false;
+    
+    /**
+     *
+     * @throws Exception 
+     */
+    public function getInstance() {
+        if (!$this->ci_loaded) {
+            $this->ci_loaded = true;
+            
+            $this->setCiPaths($this->kernel->getContainer()->get('request'));
+            
+            require_once __DIR__.'/ci_bootstrap.php';
+            \ci_bootstrap($this->kernel, true); // load without calling code igniter method but initiating CI class
+        }
+        return get_instance();
+    }
+    
     /**
      * Return response from CI
      * 
@@ -124,49 +198,14 @@ class CiHelperService {
      * @throws Exception 
      */
     public function getResponse(Request $request) {
-        if (!$this->isConfigValid())
-            throw new Exception('Code Igniter configuration is not valid.');
+        if ($this->ci_loaded)
+            throw new Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
+        
+        $this->ci_loaded = true;
+        
+        $this->setCiPaths($request);
 
         require_once __DIR__.'/ci_bootstrap.php';
-        
-        $script_file = '.' . $request->getBasePath() . $request->getScriptName();
-        $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
-        $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
-        
-        error_reporting(error_reporting() ^ E_NOTICE); // code igniter likes notices
-        
-        /*
-         * -------------------------------------------------------------------
-         *  Now that we know the path, set the main path constants
-         * -------------------------------------------------------------------
-         */
-        // The name of THIS file
-        define('SELF', pathinfo($script_file, PATHINFO_BASENAME));
-
-        // The PHP file extension
-        // this global constant is deprecated.
-        define('EXT', '.php');
-
-        // Path to the system folder
-        define('BASEPATH', str_replace("\\", "/", $system_path));
-
-        // Path to the front controller (this file)
-        define('FCPATH', str_replace(SELF, '', __FILE__));
-
-        // Name of the "system folder"
-        define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
-
-
-        // The path to the "application" folder
-        if (is_dir($application_folder)) {
-            define('APPPATH', $application_folder . '/');
-        } else {
-            if (!is_dir(BASEPATH . $application_folder . '/')) {
-                exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
-            }
-
-            define('APPPATH', BASEPATH . $application_folder . '/');
-        }
 
         ob_start();
         
@@ -181,7 +220,7 @@ class CiHelperService {
         \ci_bootstrap($this->kernel);
   
         $output = ob_get_clean();
-
+        
         return new \Symfony\Component\HttpFoundation\Response($output);
     }
 

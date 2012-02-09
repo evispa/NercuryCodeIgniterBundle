@@ -6,7 +6,7 @@
 
     <parameters>
         <parameter key="nercury_code_igniter.request_listener.class">Nercury\CodeIgniterBundle\CiRequestListenerService</parameter>
-        <parameter key="nercury_code_igniter.helper.class">Nercury\CodeIgniterBundle\CiHelperService</parameter>
+        <parameter key="ci.class">Nercury\CodeIgniterBundle\CiHelperService</parameter>
         <parameter key="nercury_code_igniter.default_action_resolve_listener.class">Nercury\CodeIgniterBundle\DefaultCiActionResolver</parameter>
         <parameter key="nercury_code_igniter.configuration" />
     </parameters>
@@ -14,9 +14,9 @@
     <services>
         <service id="kernel.listener.nercury_code_igniter_listener" class="%nercury_code_igniter.request_listener.class%">
             <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" priority="300" />
-            <argument type="service" id="nercury_code_igniter.helper" />
+            <argument type="service" id="ci" />
         </service>
-        <service id="nercury_code_igniter.helper" class="%nercury_code_igniter.helper.class%">
+        <service id="ci" class="%ci.class%">
             <argument>%nercury_code_igniter.configuration%</argument>
             <argument type="service" id="logger" />
             <argument type="service" id="kernel" />
