@@ -200,7 +200,7 @@ class CiHelperService {
      */
     public function getResponse(Request $request) {
         if ($this->ci_loaded)
-            throw new Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
+            throw new \Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
         
         $this->ci_loaded = true;
         
