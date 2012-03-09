@@ -1,6 +1,6 @@
 <?php
 
-function ci_bootstrap($kernel, $load_fake_controller = false) {
+function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_controller = false) {
     global $assign_to_config;
     global $BM;
     global $CFG;
@@ -250,7 +250,10 @@ function ci_bootstrap($kernel, $load_fake_controller = false) {
     if (file_exists(APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php')) {
         require APPPATH . 'core/' . $CFG->config['subclass_prefix'] . 'Controller.php';
         /** MODIFICATION FOR SYMFONY (add) */
-        $base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+        if ($override_controller_class === false)
+            $base_controller_class = $CFG->config['subclass_prefix'] . 'Controller';
+        else
+            $base_controller_class = $override_controller_class;
         /** END */
     }
 

@@ -174,6 +174,12 @@ class CiHelperService {
         }
     }
     
+    public function setBaseControllerOverrideClass($className) {
+        $this->override_controller_class = $className;
+    }
+    
+    private $override_controller_class = false;
+    
     private $ci_loaded = false;
     
     /**
@@ -187,7 +193,7 @@ class CiHelperService {
             $this->setCiPaths($this->kernel->getContainer()->get('request'));
             
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, true); // load without calling code igniter method but initiating CI class
+            \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
         }
         return get_instance();
     }
