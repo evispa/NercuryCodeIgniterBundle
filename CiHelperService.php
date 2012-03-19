@@ -134,7 +134,7 @@ class CiHelperService {
             $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
             $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
 
-            if ($this->kernel->isDebug())
+            if (error_reporting() != 0)
                 error_reporting(error_reporting() ^ E_NOTICE); // code igniter likes notices
 
             /*
