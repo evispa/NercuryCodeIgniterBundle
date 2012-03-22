@@ -347,7 +347,9 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
     }
     /** END */
 
-    $CI = new $class();
+    /** MODIFICATION FOR SYMFONY (replace) */
+    $CI = new $class($GLOBALS['CI_symfony']);
+    /** END */
     
     /** MODIFICATION FOR SYMFONY (add) ****/
     $CI->symfony = $GLOBALS['CI_symfony'];
