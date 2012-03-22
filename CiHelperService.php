@@ -134,9 +134,14 @@ class CiHelperService {
             $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
             $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
 
-            if ($this->kernel->isDebug())
-                error_reporting(error_reporting() ^ E_NOTICE); // code igniter likes notices
-
+            // code igniter likes notices
+            $errorlevel = error_reporting();
+            if ($errorlevel > 0) {
+                error_reporting($errorlevel & ~ E_NOTICE);
+            } elseif ($errorlevel < 0) {
+                error_reporting(E_ALL & ~ E_NOTICE);
+            }
+            
             /*
             * -------------------------------------------------------------------
             *  Now that we know the path, set the main path constants
@@ -195,6 +200,7 @@ class CiHelperService {
             require_once __DIR__.'/ci_bootstrap.php';
             \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
         }
+        
         return get_instance();
     }
     
