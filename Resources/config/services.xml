@@ -13,7 +13,7 @@
  
     <services>
         <service id="kernel.listener.nercury_code_igniter_listener" class="%nercury_code_igniter.request_listener.class%">
-            <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" priority="300" />
+            <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" priority="0" />
             <argument type="service" id="ci" />
         </service>
         <service id="ci" class="%ci.class%">

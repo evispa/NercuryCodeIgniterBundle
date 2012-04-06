@@ -125,12 +125,14 @@ class CiHelperService {
      * @param Request $request
      * @throws Exception 
      */
-    public function setCiPaths(Request $request) {
+    public function setCiPaths(Request $request = null) {
         if (!$this->isConfigValid())
             throw new Exception('Code Igniter configuration is not valid.');
         
         if ($this->paths_initalized === false) {
-            $script_file = '.' . $request->getBasePath() . $request->getScriptName();
+            $script_file = $request !== null
+                ? '.' . $request->getBasePath() . $request->getScriptName()
+                : __FILE__;
             $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
             $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
 
@@ -195,7 +197,11 @@ class CiHelperService {
         if (!$this->ci_loaded) {
             $this->ci_loaded = true;
             
-            $this->setCiPaths($this->kernel->getContainer()->get('request'));
+            if ($this->kernel->getContainer()->isScopeActive('request')) {
+                $this->setCiPaths($this->kernel->getContainer()->get('request'));
+            } else {
+                $this->setCiPaths();
+            }
             
             require_once __DIR__.'/ci_bootstrap.php';
             \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
@@ -203,7 +209,7 @@ class CiHelperService {
         
         return get_instance();
     }
-    
+
     /**
      * Return response from CI
      * 
