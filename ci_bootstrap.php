@@ -1,5 +1,12 @@
 <?php
 
+// Load the base controller class
+require BASEPATH . 'core/Controller.php';
+
+function &get_instance() {
+    return CI_Controller::get_instance();
+}
+
 function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_controller = false) {
     global $assign_to_config;
     global $BM;
@@ -236,12 +243,7 @@ function ci_bootstrap($kernel, $override_controller_class = false, $load_fake_co
      * ------------------------------------------------------
      *
      */
-    // Load the base controller class
-    require BASEPATH . 'core/Controller.php';
-
-    function &get_instance() {
-        return CI_Controller::get_instance();
-    }
+    /** REMOVED FOR SYMFONY **/
 
     /** MODIFICATION FOR SYMFONY (add) */
     $base_controller_class = 'CI_Controller';

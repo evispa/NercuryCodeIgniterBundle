@@ -125,23 +125,27 @@ class CiHelperService {
      * @param Request $request
      * @throws Exception 
      */
-    public function setCiPaths(Request $request = null) {
+    public function setCiPaths(Request $request = null) { 
         if (!$this->isConfigValid())
-            throw new Exception('Code Igniter configuration is not valid.');
+            throw new \Exception('Code Igniter configuration is not valid.');
         
         if ($this->paths_initalized === false) {
             $script_file = $request !== null
                 ? '.' . $request->getBasePath() . $request->getScriptName()
                 : __FILE__;
-            $system_path = $this->getRelativePath(realpath('.'), $this->getSystemPath()).'/';
-            $application_folder = $this->getRelativePath(realpath('.'), $this->getAppPath());
+            
+            $root_path = realpath($this->kernel->getRootDir().'/..');
+            if ($root_path === false) {
+                throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
+            }
 
-            // code igniter likes notices
-            $errorlevel = error_reporting();
-            if ($errorlevel > 0) {
-                error_reporting($errorlevel & ~ E_NOTICE);
-            } elseif ($errorlevel < 0) {
-                error_reporting(E_ALL & ~ E_NOTICE);
+            $system_path = $this->getRelativePath($root_path, $this->getSystemPath()).'/';
+            $application_folder = $this->getRelativePath($root_path, $this->getAppPath());
+            
+            if ($script_file === __FILE__) {
+                $script_file = $root_path . '/app.php';
+                $system_path = realpath($root_path.'/'.$system_path).'/';
+                $application_folder = realpath($root_path.'/'.$application_folder);
             }
             
             /*
@@ -187,15 +191,21 @@ class CiHelperService {
     
     private $override_controller_class = false;
     
-    private $ci_loaded = false;
+    private static $ci_loaded = false;
     
     /**
      *
      * @throws Exception 
      */
-    public function getInstance() {
-        if (!$this->ci_loaded) {
-            $this->ci_loaded = true;
+    public function getInstance() {        
+        $this->unsetNoticeErrorLevel();
+        
+        if (function_exists('get_instance')) {
+            self::$ci_loaded = true;
+        }
+        
+        if (!self::$ci_loaded) {
+            self::$ci_loaded = true;
             
             if ($this->kernel->getContainer()->isScopeActive('request')) {
                 $this->setCiPaths($this->kernel->getContainer()->get('request'));
@@ -207,7 +217,7 @@ class CiHelperService {
             \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
         }
         
-        return get_instance();
+        return \get_instance();
     }
 
     /**
@@ -218,11 +228,12 @@ class CiHelperService {
      * @throws Exception 
      */
     public function getResponse(Request $request) {
-        if ($this->ci_loaded)
+        if (self::$ci_loaded)
             throw new \Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
         
-        $this->ci_loaded = true;
+        self::$ci_loaded = true;
         
+        $this->unsetNoticeErrorLevel();
         $this->setCiPaths($request);
 
         require_once __DIR__.'/ci_bootstrap.php';
@@ -260,6 +271,16 @@ class CiHelperService {
      */
     public function getSystemPath() {
         return $this->system_path;
+    }
+    
+    public function unsetNoticeErrorLevel(){
+        // code igniter likes notices
+        $errorlevel = error_reporting();
+        if ($errorlevel > 0) {
+            error_reporting($errorlevel & ~ E_NOTICE);
+        } elseif ($errorlevel < 0) {
+            error_reporting(E_ALL & ~ E_NOTICE);
+        }
     }
 
 }
