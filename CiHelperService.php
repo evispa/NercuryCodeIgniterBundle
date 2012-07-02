@@ -245,19 +245,27 @@ class CiHelperService {
 
         require_once __DIR__.'/ci_bootstrap.php';
 
-        ob_start();
-        
-        /*
-         * --------------------------------------------------------------------
-         * LOAD THE BOOTSTRAP FILE
-         * --------------------------------------------------------------------
-         *
-         * And away we go...
-         *
-         */
-        \ci_bootstrap($this->kernel);
-  
-        $output = ob_get_clean();
+        try {
+            ob_start();
+
+            /*
+             * --------------------------------------------------------------------
+             * LOAD THE BOOTSTRAP FILE
+             * --------------------------------------------------------------------
+             *
+             * And away we go...
+             *
+             */
+            \ci_bootstrap($this->kernel);
+
+            $output = ob_get_clean();
+        } catch (\Exception $e) {
+            $output = ob_get_clean();
+
+            $handler = new \Symfony\Component\HttpKernel\Debug\ExceptionHandler();
+            
+            return $handler->createResponse($e);
+        }
         
         return new \Symfony\Component\HttpFoundation\Response($output);
     }
