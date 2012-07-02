@@ -148,6 +148,13 @@ class CiHelperService {
                 $application_folder = realpath($root_path.'/'.$application_folder);
             }
             
+            $environment = $this->kernel->getEnvironment();
+            $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
+            if(array_key_exists($environment, $environmentMap)) {
+                $environment = $environmentMap[$environment];
+            }
+            define('ENVIRONMENT', $environment);
+            
             /*
             * -------------------------------------------------------------------
             *  Now that we know the path, set the main path constants
