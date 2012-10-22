@@ -14,6 +14,10 @@ Install bundle over composer, and load it in AppKernel::
         ...
     );
 
+In case you are still using Symfony 2.0, do not forget to autoload the bundle in autoload.php::
+
+    'Nercury' => __DIR__.'/../vendor/nercury/code-igniter-bundle',
+
 In config.yml, specify paths to CodeIgniter directories::
 
     nercury_code_igniter:

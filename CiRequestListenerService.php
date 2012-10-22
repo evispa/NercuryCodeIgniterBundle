@@ -46,6 +46,9 @@ class CiRequestListenerService {
      * @param GetResponseEvent $event 
      */
     public function onKernelRequest(GetResponseEvent $event) {
+        if ($event->getRequestType() == \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST)
+            return;
+        
         $actions = $this->ci_helper->resolveCiActions($event->getRequest());
         foreach ($actions as $action) {
             if ($this->ci_helper->hasController($action['controller'])) {
