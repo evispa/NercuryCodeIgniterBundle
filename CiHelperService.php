@@ -190,10 +190,12 @@ class CiHelperService {
     private $ci_loaded = false;
     
     /**
-     *
+     * Get code igniter instance, equivalent to get_instance
+     * 
+     * @param boolean $useFakeController Load without calling code igniter method but initiating CI class
      * @throws Exception 
      */
-    public function getInstance() {
+    public function getInstance($useFakeController = true) {
         if (!$this->ci_loaded) {
             $this->ci_loaded = true;
             
@@ -204,7 +206,7 @@ class CiHelperService {
             }
             
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
+            \ci_bootstrap($this->kernel, $this->override_controller_class, $useFakeController);
         }
         
         return get_instance();
