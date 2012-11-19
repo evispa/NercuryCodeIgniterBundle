@@ -136,14 +136,9 @@ class CiHelperService {
                 throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
             }
 
-            $system_path = $this->getRelativePath($root_path, $this->getSystemPath()).'/';
-            $application_folder = $this->getRelativePath($root_path, $this->getAppPath());
-            
-            if ($script_file === __FILE__) {
-                $script_file = $root_path . '/app.php';
-                $system_path = realpath($root_path.'/'.$system_path).'/';
-                $application_folder = realpath($root_path.'/'.$application_folder);
-            }
+            $script_file = $root_path . '/app.php';
+            $system_path = realpath($root_path.'/'.$this->getRelativePath($root_path, $this->getSystemPath())).'/';
+            $application_folder = realpath($root_path.'/'.$this->getRelativePath($root_path, $this->getAppPath()));
             
             $environment = $this->kernel->getEnvironment();
             $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
