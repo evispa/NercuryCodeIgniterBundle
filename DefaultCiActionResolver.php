@@ -26,6 +26,20 @@ use Nercury\CodeIgniterBundle\CiActionResolveEvent;
  */
 class DefaultCiActionResolver {
 
+    public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst) {
+        $controller_path = '';
+        for ($i = $indexOfFirst; $i < count($pathParts) && $i < 10; $i++) {
+            if ($controller_path == '')
+                $controller_path = $pathParts[$i];
+            else
+                $controller_path .= '/'.$pathParts[$i];
+            $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
+            if ($next !== false)
+                $event->addPossibleAction($controller_path, $next);
+            $event->addPossibleAction($controller_path, 'index');
+        }
+    }
+    
     /**
      * This method collects possible routes for a request.
      * 
@@ -34,39 +48,19 @@ class DefaultCiActionResolver {
     public function onActionResolveEvent(CiActionResolveEvent $event) {
         $path = $event->getRequest()->getPathInfo();
         $parts = explode('/', substr($path, 1));
-        $index_of_first = 0;
+        $indexOfFirst = 0;
         
         if (count($parts) > 1) {
             if (false !== strpos($parts[0], '.php')) {
-                $index_of_first++;
+                $indexOfFirst++;
             }
 
-            if (count($parts) > $index_of_first + 1) {
-                $controller_path = '';
-                for ($i = $index_of_first; $i < count($parts) && $i < 10; $i++) {
-                    if ($controller_path == '')
-                        $controller_path = $parts[$i];
-                    else
-                        $controller_path .= '/'.$parts[$i];
-                    $next = $i < count($parts) - 1 ? $parts[$i + 1] : false;
-                    if ($next !== false)
-                        $event->addPossibleAction($controller_path, $next);
-                    $event->addPossibleAction($controller_path, 'index');
-                }
+            if (count($parts) > $indexOfFirst + 1) {
+                $this->addPossibleRoutes($event, $parts, $indexOfFirst);
 
                 // add routes in case first part is a language string, i.e /en/...
-                if (count($parts) > $index_of_first + 2 && strlen($parts[0]) > 1 && strlen($parts[0]) <= 2) {
-                    $controller_path = '';
-                    for ($i = 1; $i < count($parts) && $i < 10; $i++) {
-                        if ($controller_path == '')
-                            $controller_path = $parts[$i];
-                        else
-                            $controller_path .= '/'.$parts[$i];
-                        $next = $i < count($parts) - 1 ? $parts[$i + 1] : false;
-                        if ($next !== false)
-                            $event->addPossibleAction($controller_path, $next);
-                        $event->addPossibleAction($controller_path, 'index');
-                    }
+                if (count($parts) > $indexOfFirst + 2 && strlen($parts[0]) > 1 && strlen($parts[0]) <= 2) {
+                    $this->addPossibleRoutes($event, $parts, $indexOfFirst + 1);
                 }
             }
         }
