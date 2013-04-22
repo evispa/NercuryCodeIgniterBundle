@@ -92,26 +92,29 @@ class CiHelperService {
     }
 
     function getRelativePath($from, $to) {
-        $patha = explode('/', $from);
-        $pathb = explode('/', $to);
-        
-        $start_point = count(array_intersect($patha,$pathb));
-        
-        while($start_point--) {
-            array_shift($patha);
-            array_shift($pathb);
-        }
-        
-        $output = "";
-        if(($back_count = count($patha))) {
-            while($back_count--) {
-                $output .= "../";
+        $from = explode('/', $from);
+        $to = explode('/', $to);
+        $relPath = $to;
+
+        foreach ($from as $depth => $dir) {
+            // find first non-matching dir
+            if ($dir === $to[$depth]) {
+                // ignore this directory
+                array_shift($relPath);
+            } else {
+                // get number of remaining dirs to $from
+                $remaining = count($from) - $depth;
+                if ($remaining > 1) {
+                    // add traversals up to first matching dir
+                    $padLength = (count($relPath) + $remaining - 1) * -1;
+                    $relPath = array_pad($relPath, $padLength, '..');
+                    break;
+                } else {
+                    $relPath[0] = $relPath[0];
+                }
             }
-        } else {
-            $output .= './';
         }
-        
-        return $output . implode('/', $pathb);
+        return implode('/', $relPath);
     }
 
     private $paths_initalized = false;
@@ -122,7 +125,7 @@ class CiHelperService {
      * @param Request $request
      * @throws Exception 
      */
-    public function setCiPaths(Request $request = null) {
+    public function setCiPaths(Request $request = null) { 
         if (!$this->isConfigValid())
             throw new \Exception('Code Igniter configuration is not valid.');
         
@@ -130,15 +133,20 @@ class CiHelperService {
             $script_file = $request !== null
                 ? '.' . $request->getBasePath() . $request->getScriptName()
                 : __FILE__;
-
+            
             $root_path = realpath($this->kernel->getRootDir().'/..');
             if ($root_path === false) {
                 throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
             }
 
-            $script_file = $root_path . '/app.php';
-            $system_path = realpath($root_path.'/'.$this->getRelativePath($root_path, $this->getSystemPath())).'/';
-            $application_folder = realpath($root_path.'/'.$this->getRelativePath($root_path, $this->getAppPath()));
+            $system_path = $this->getRelativePath($root_path, $this->getSystemPath()).'/';
+            $application_folder = $this->getRelativePath($root_path, $this->getAppPath());
+            
+            if ($script_file === __FILE__) {
+                $script_file = $root_path . '/app.php';
+                $system_path = realpath($root_path.'/'.$system_path).'/';
+                $application_folder = realpath($root_path.'/'.$application_folder);
+            }
             
             $environment = $this->kernel->getEnvironment();
             $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
@@ -196,7 +204,7 @@ class CiHelperService {
      *
      * @throws Exception 
      */
-    public function getInstance($useFakeController = true) {
+    public function getInstance() {        
         $this->unsetNoticeErrorLevel();
         
         if (function_exists('get_instance')) {
@@ -213,7 +221,7 @@ class CiHelperService {
             }
             
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, $this->override_controller_class, $useFakeController);
+            \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
         }
         
         return \get_instance();
@@ -238,19 +246,19 @@ class CiHelperService {
         require_once __DIR__.'/ci_bootstrap.php';
 
         try {
-        ob_start();
-        
-        /*
-         * --------------------------------------------------------------------
-         * LOAD THE BOOTSTRAP FILE
-         * --------------------------------------------------------------------
-         *
-         * And away we go...
-         *
-         */
-        \ci_bootstrap($this->kernel);
-  
-        $output = ob_get_clean();
+            ob_start();
+
+            /*
+             * --------------------------------------------------------------------
+             * LOAD THE BOOTSTRAP FILE
+             * --------------------------------------------------------------------
+             *
+             * And away we go...
+             *
+             */
+            \ci_bootstrap($this->kernel);
+
+            $output = ob_get_clean();
         } catch (\Exception $e) {
             $output = ob_get_clean();
 
