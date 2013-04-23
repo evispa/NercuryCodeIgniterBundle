@@ -53,6 +53,7 @@ class CiRequestListenerService {
         foreach ($actions as $action) {
             if ($this->ci_helper->hasController($action['controller'])) {
                 // handle everything over CI
+                $event->getRequest()->setLocale($action['locale']);
                 $event->setResponse($this->ci_helper->getResponse($event->getRequest()));
                 $event->stopPropagation();
                 break;

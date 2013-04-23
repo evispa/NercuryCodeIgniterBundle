@@ -26,7 +26,13 @@ use Nercury\CodeIgniterBundle\CiActionResolveEvent;
  */
 class DefaultCiActionResolver {
 
-    public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst) {
+    protected $defaultLocale;
+    
+    public function __construct($defaultLocale) {
+        $this->defaultLocale = $defaultLocale;
+    }
+    
+    public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale) {
         $controller_path = '';
         for ($i = $indexOfFirst; $i < count($pathParts) && $i < 10; $i++) {
             if ($controller_path == '')
@@ -35,8 +41,8 @@ class DefaultCiActionResolver {
                 $controller_path .= '/'.$pathParts[$i];
             $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
             if ($next !== false)
-                $event->addPossibleAction($controller_path, $next);
-            $event->addPossibleAction($controller_path, 'index');
+                $event->addPossibleAction($controller_path, $next, $locale);
+            $event->addPossibleAction($controller_path, 'index', $locale);
         }
     }
     
@@ -56,11 +62,11 @@ class DefaultCiActionResolver {
             }
 
             if (count($parts) > $indexOfFirst + 1) {
-                $this->addPossibleRoutes($event, $parts, $indexOfFirst);
+                $this->addPossibleRoutes($event, $parts, $indexOfFirst, $this->defaultLocale);
 
                 // add routes in case first part is a language string, i.e /en/...
                 if (count($parts) > $indexOfFirst + 2 && strlen($parts[0]) > 1 && strlen($parts[0]) <= 2) {
-                    $this->addPossibleRoutes($event, $parts, $indexOfFirst + 1);
+                    $this->addPossibleRoutes($event, $parts, $indexOfFirst + 1, $parts[0]);
                 }
             }
         }
