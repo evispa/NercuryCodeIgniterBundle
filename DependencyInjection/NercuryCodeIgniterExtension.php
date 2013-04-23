@@ -25,6 +25,8 @@ class NercuryCodeIgniterExtension extends Extension
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
         
-        $container->setParameter('nercury_code_igniter.configuration', $config);
+        $container->setParameter('nercury_code_igniter.detect_controllers', $config['detect_controllers']);
+        $container->setParameter('nercury_code_igniter.application_path', $config['application_path']);
+        $container->setParameter('nercury_code_igniter.system_path', $config['system_path']);
     }
 }

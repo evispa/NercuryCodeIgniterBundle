@@ -28,9 +28,9 @@ use Symfony\Component\HttpFoundation\Request;
 class CiHelperService {
 
     /**
-     * @var array 
+     * @var boolean 
      */
-    protected $config;
+    protected $detectControllers;
 
     /**
      * @var \Monolog\Logger 
@@ -51,13 +51,13 @@ class CiHelperService {
     protected $app_path = false;
     protected $system_path = false;
 
-    public function __construct($config, $logger, $kernel, $event_dispatcher) {
-        $this->config = $config;
+    public function __construct($detectControllers, $applicationPath, $systemPath, $logger, $kernel, $event_dispatcher) {
+        $this->detectControllers = $detectControllers;
         $this->kernel = $kernel;
         $this->logger = $logger;
         $this->event_dispatcher = $event_dispatcher;
-        $this->app_path = realpath($config['application_path']);
-        $this->system_path = realpath($config['system_path']);
+        $this->app_path = realpath($applicationPath);
+        $this->system_path = realpath($systemPath);
     }
 
     protected function isConfigValid() {
@@ -66,7 +66,7 @@ class CiHelperService {
 
     public function resolveCiActions(Request $request) {
         $event = new CiActionResolveEvent($request);
-        if ($this->config['detect_controllers'] !== false)
+        if ($this->detectControllers !== false)
             $this->event_dispatcher->dispatch('nercury.ci_action_resolve', $event);
         return $event->getResolvedActions();
     }

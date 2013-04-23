@@ -7,7 +7,7 @@
     <parameters>
         <parameter key="nercury_code_igniter.request_listener.class">Nercury\CodeIgniterBundle\CiRequestListenerService</parameter>
         <parameter key="ci.class">Nercury\CodeIgniterBundle\CiHelperService</parameter>
-        <parameter key="nercury_code_igniter.default_action_resolve_listener.class">Nercury\CodeIgniterBundle\DefaultCiActionResolver</parameter>
+        <parameter key="nercury_code_igniter.action_resolve_listener.default.class">Nercury\CodeIgniterBundle\DefaultCiActionResolver</parameter>
         <parameter key="nercury_code_igniter.configuration" />
     </parameters>
  
@@ -17,12 +17,14 @@
             <argument type="service" id="ci" />
         </service>
         <service id="ci" class="%ci.class%">
-            <argument>%nercury_code_igniter.configuration%</argument>
+            <argument>%nercury_code_igniter.detect_controllers%</argument>
+            <argument>%nercury_code_igniter.application_path%</argument>
+            <argument>%nercury_code_igniter.system_path%</argument>
             <argument type="service" id="logger" />
             <argument type="service" id="kernel" />
             <argument type="service" id="event_dispatcher" />
         </service>
-        <service id="nercury_code_igniter.default_action_resolve_listener" class="%nercury_code_igniter.default_action_resolve_listener.class%">
+        <service id="nercury_code_igniter.action_resolve_listener.default" class="%nercury_code_igniter.action_resolve_listener.default.class%" public="false">
             <tag name="kernel.event_listener" event="nercury.ci_action_resolve" method="onActionResolveEvent" />
         </service>
     </services>
