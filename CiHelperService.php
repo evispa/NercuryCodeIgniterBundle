@@ -204,7 +204,7 @@ class CiHelperService {
      *
      * @throws Exception 
      */
-    public function getInstance() {        
+    public function getInstance($useFakeController = true) {        
         $this->unsetNoticeErrorLevel();
         
         if (function_exists('get_instance')) {
@@ -221,7 +221,7 @@ class CiHelperService {
             }
             
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
+            \ci_bootstrap($this->kernel, $this->override_controller_class, $useFakeController); // load without calling code igniter method but initiating CI class
         }
         
         return \get_instance();
