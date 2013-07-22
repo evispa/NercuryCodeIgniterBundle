@@ -24,38 +24,44 @@ use Nercury\CodeIgniterBundle\CiActionResolveEvent;
  * This is default event listener to resolve CI actions.
  * It resolves /{controller}/{function} action
  */
-class DefaultCiActionResolver {
+class DefaultCiActionResolver
+{
 
     protected $defaultLocale;
-    
-    public function __construct($defaultLocale) {
+
+    public function __construct($defaultLocale)
+    {
         $this->defaultLocale = $defaultLocale;
     }
-    
-    public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale) {
+
+    public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale)
+    {
         $controller_path = '';
         for ($i = $indexOfFirst; $i < count($pathParts) && $i < 10; $i++) {
-            if ($controller_path == '')
+            if ($controller_path == '') {
                 $controller_path = $pathParts[$i];
-            else
-                $controller_path .= '/'.$pathParts[$i];
+            } else {
+                $controller_path .= '/' . $pathParts[$i];
+            }
             $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
-            if ($next !== false)
+            if ($next !== false) {
                 $event->addPossibleAction($controller_path, $next, $locale);
+            }
             $event->addPossibleAction($controller_path, 'index', $locale);
         }
     }
-    
+
     /**
      * This method collects possible routes for a request.
-     * 
-     * @param CiActionResolveEvent $event 
+     *
+     * @param CiActionResolveEvent $event
      */
-    public function onActionResolveEvent(CiActionResolveEvent $event) {
+    public function onActionResolveEvent(CiActionResolveEvent $event)
+    {
         $path = $event->getRequest()->getPathInfo();
         $parts = explode('/', substr($path, 1));
         $indexOfFirst = 0;
-        
+
         if (count($parts) > 1) {
             if (false !== strpos($parts[0], '.php')) {
                 $indexOfFirst++;
@@ -71,5 +77,4 @@ class DefaultCiActionResolver {
             }
         }
     }
-
 }

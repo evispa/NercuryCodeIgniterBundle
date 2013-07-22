@@ -28,18 +28,18 @@ use Symfony\Component\HttpFoundation\Request;
 class CiHelperService {
 
     /**
-     * @var boolean 
+     * @var boolean
      */
     protected $detectControllers;
 
     /**
-     * @var \Monolog\Logger 
+     * @var \Monolog\Logger
      */
     protected $logger;
-    
+
     /**
      *
-     * @var \Symfony\Component\HttpKernel\Kernel 
+     * @var \Symfony\Component\HttpKernel\Kernel
      */
     protected $kernel;
 
@@ -64,34 +64,8 @@ class CiHelperService {
         return $this->app_path !== false && $this->system_path !== false;
     }
 
-    public function resolveCiActions(Request $request) {
-        $event = new CiActionResolveEvent($request);
-        if ($this->detectControllers !== false)
-            $this->event_dispatcher->dispatch('nercury.ci_action_resolve', $event);
-        return $event->getResolvedActions();
-    }
-
-    /**
-     * Get physical controller file name based on it's name
-     * 
-     * @param string $controllerName
-     * @return string 
-     */
-    public function getControllerFile($controllerName) {
-        return $this->getAppPath() . '/controllers/' . $controllerName . '.php';
-    }
-
-    public function hasController($controller) {
-        if (!$this->isConfigValid())
-            return false;
-
-        $controller_file = $this->getControllerFile($controller);
-
-        if (file_exists($controller_file))
-            return true;
-    }
-
-    function getRelativePath($from, $to) {
+    function getRelativePath($from, $to)
+    {
         $from = explode('/', $from);
         $to = explode('/', $to);
         $relPath = $to;
@@ -118,22 +92,23 @@ class CiHelperService {
     }
 
     private $paths_initalized = false;
-    
+
     /**
      * Initialize code igniter system paths and defines
-     * 
+     *
      * @param Request $request
-     * @throws Exception 
+     * @throws Exception
      */
-    public function setCiPaths(Request $request = null) { 
-        if (!$this->isConfigValid())
+    public function setCiPaths(Request $request = null) {
+        if (!$this->isConfigValid()) {
             throw new \Exception('Code Igniter configuration is not valid.');
-        
+        }
+
         if ($this->paths_initalized === false) {
             $script_file = $request !== null
                 ? '.' . $request->getBasePath() . $request->getScriptName()
                 : __FILE__;
-            
+
             $root_path = realpath($this->kernel->getRootDir().'/..');
             if ($root_path === false) {
                 throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
@@ -141,20 +116,20 @@ class CiHelperService {
 
             $system_path = $this->getRelativePath($root_path, $this->getSystemPath()).'/';
             $application_folder = $this->getRelativePath($root_path, $this->getAppPath());
-            
+
             if ($script_file === __FILE__) {
                 $script_file = $root_path . '/app.php';
                 $system_path = realpath($root_path.'/'.$system_path).'/';
                 $application_folder = realpath($root_path.'/'.$application_folder);
             }
-            
+
             $environment = $this->kernel->getEnvironment();
             $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
             if(array_key_exists($environment, $environmentMap)) {
                 $environment = $environmentMap[$environment];
             }
             define('ENVIRONMENT', $environment);
-            
+
             /*
             * -------------------------------------------------------------------
             *  Now that we know the path, set the main path constants
@@ -187,59 +162,59 @@ class CiHelperService {
 
                 define('APPPATH', BASEPATH . $application_folder . '/');
             }
-            
+
             $this->paths_initalized = true;
         }
     }
-    
+
     public function setBaseControllerOverrideClass($className) {
         $this->override_controller_class = $className;
     }
-    
+
     private $override_controller_class = false;
-    
+
     private static $ci_loaded = false;
-    
+
     /**
      *
-     * @throws Exception 
+     * @throws Exception
      */
-    public function getInstance($useFakeController = true) {        
+    public function getInstance() {
         $this->unsetNoticeErrorLevel();
-        
+
         if (function_exists('get_instance')) {
             self::$ci_loaded = true;
         }
-        
+
         if (!self::$ci_loaded) {
             self::$ci_loaded = true;
-            
+
             if ($this->kernel->getContainer()->isScopeActive('request')) {
                 $this->setCiPaths($this->kernel->getContainer()->get('request'));
             } else {
                 $this->setCiPaths();
             }
-            
+
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, $this->override_controller_class, $useFakeController); // load without calling code igniter method but initiating CI class
+            \ci_bootstrap($this->kernel, $this->override_controller_class, true); // load without calling code igniter method but initiating CI class
         }
-        
+
         return \get_instance();
     }
 
     /**
      * Return response from CI
-     * 
+     *
      * @param Request $request
      * @return \Symfony\Component\HttpFoundation\Response
-     * @throws Exception 
+     * @throws Exception
      */
     public function getResponse(Request $request) {
         if (self::$ci_loaded)
             throw new \Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
-        
+
         self::$ci_loaded = true;
-        
+
         $this->unsetNoticeErrorLevel();
         $this->setCiPaths($request);
 
@@ -263,16 +238,16 @@ class CiHelperService {
             $output = ob_get_clean();
 
             $handler = new \Symfony\Component\HttpKernel\Debug\ExceptionHandler();
-            
+
             return $handler->createResponse($e);
         }
-        
+
         return new \Symfony\Component\HttpFoundation\Response($output);
     }
 
     /**
      * Returns CI APPPATH
-     * 
+     *
      * @return string Returns FALSE if path was not defined in config
      */
     public function getAppPath() {
@@ -281,13 +256,13 @@ class CiHelperService {
 
     /**
      * Returns CI system path
-     * 
+     *
      * @return string Returns FALSE if path was not defined in config
      */
     public function getSystemPath() {
         return $this->system_path;
     }
-    
+
     public function unsetNoticeErrorLevel(){
         // code igniter likes notices
         $errorlevel = error_reporting();

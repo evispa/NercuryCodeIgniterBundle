@@ -27,38 +27,71 @@ use Symfony\Component\HttpFoundation\Response;
  *
  * @author nercury
  */
-class CiRequestListenerService {
+class CiRequestListenerService
+{
 
     /**
-     * 
-     * @var CiHelperService 
+     * @var \Symfony\Component\DependencyInjection\Container
      */
-    private $ci_helper;
-    
-    public function __construct($ci_helper) {
-        $this->ci_helper = $ci_helper;
+    private $container;
+
+    private $appPath;
+
+    private $detectControllers;
+
+    public function __construct($container, $appPath, $detectControllers)
+    {
+        $this->container = $container;
+        $this->appPath = $appPath;
+        $this->detectControllers = $detectControllers;
     }
-    
+
+    /**
+     * Get physical controller file name based on it's name
+     *
+     * @param string $controllerName
+     * @return string
+     */
+    public function getControllerFile($controllerName)
+    {
+        return $this->appPath . '/controllers/' . $controllerName . '.php';
+    }
+
+    public function hasController($controller)
+    {
+        $controller_file = $this->getControllerFile($controller);
+
+        if (file_exists($controller_file)) {
+            return true;
+        }
+    }
+
     /**
      * This method listens to symfony request, and if it's url matches some controller
      * defined in CI path, it redirects request handling to CI.
-     * 
-     * @param GetResponseEvent $event 
+     *
+     * @param GetResponseEvent $event
      */
-    public function onKernelRequest(GetResponseEvent $event) {
-        if ($event->getRequestType() == \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST)
+    public function onKernelRequest(GetResponseEvent $event)
+    {
+        if ($event->getRequestType() == \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST) {
             return;
-        
-        $actions = $this->ci_helper->resolveCiActions($event->getRequest());
+        }
+
+        $event = new CiActionResolveEvent($event->getRequest());
+        if ($this->detectControllers !== false) {
+            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $event);
+        }
+        $actions = $event->getResolvedActions();
+
         foreach ($actions as $action) {
-            if ($this->ci_helper->hasController($action['controller'])) {
+            if ($this->hasController($action['controller'])) {
                 // handle everything over CI
                 $event->getRequest()->setLocale($action['locale']);
-                $event->setResponse($this->ci_helper->getResponse($event->getRequest()));
+                $event->setResponse($this->container->get('ci')->getResponse($event->getRequest()));
                 $event->stopPropagation();
                 break;
             }
         }
     }
-    
 }

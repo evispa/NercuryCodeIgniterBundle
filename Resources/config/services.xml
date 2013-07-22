@@ -10,11 +10,13 @@
         <parameter key="nercury_code_igniter.action_resolve_listener.default.class">Nercury\CodeIgniterBundle\DefaultCiActionResolver</parameter>
         <parameter key="nercury_code_igniter.configuration" />
     </parameters>
- 
+
     <services>
         <service id="kernel.listener.nercury_code_igniter_listener" class="%nercury_code_igniter.request_listener.class%">
             <tag name="kernel.event_listener" event="kernel.request" method="onKernelRequest" priority="0" />
-            <argument type="service" id="ci" />
+            <argument type="service" id="service_container" />
+            <argument>%nercury_code_igniter.application_path%</argument>
+            <argument>%nercury_code_igniter.detect_controllers%</argument>
         </service>
         <service id="ci" class="%ci.class%">
             <argument>%nercury_code_igniter.detect_controllers%</argument>
