@@ -78,11 +78,11 @@ class CiRequestListenerService
             return;
         }
 
-        $event = new CiActionResolveEvent($event->getRequest());
+        $actionEvent = new CiActionResolveEvent($event->getRequest());
         if ($this->detectControllers !== false) {
-            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $event);
+            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $actionEvent);
         }
-        $actions = $event->getResolvedActions();
+        $actions = $actionEvent->getResolvedActions();
 
         foreach ($actions as $action) {
             if ($this->hasController($action['controller'])) {
