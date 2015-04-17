@@ -26,8 +26,9 @@
             <argument type="service" id="kernel" />
             <argument type="service" id="event_dispatcher" />
         </service>
-        <service id="nercury_code_igniter.action_resolve_listener.default" class="%nercury_code_igniter.action_resolve_listener.default.class%" public="false">
+        <service id="nercury_code_igniter.action_resolve_listener.default" class="%nercury_code_igniter.action_resolve_listener.default.class%">
             <tag name="kernel.event_listener" event="nercury.ci_action_resolve" method="onActionResolveEvent" />
+            <argument>%kernel.default_locale%</argument>
         </service>
     </services>
 

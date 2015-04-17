@@ -20,5 +20,10 @@
             "Nercury\\CodeIgniterBundle": ""
         }
     },
-    "target-dir": "Nercury/CodeIgniterBundle"
+    "target-dir": "Nercury/CodeIgniterBundle",
+    "extra": {
+        "branch-alias": {
+          "dev-master": "1.2-dev"
+        }
+    }
 }
