@@ -74,20 +74,23 @@ class CiRequestListenerService
      */
     public function onKernelRequest(GetResponseEvent $event)
     {
-        if ($event->getRequestType() == \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
-        $event = new CiActionResolveEvent($event->getRequest());
+        $resolverEvent = new CiActionResolveEvent($event->getRequest());
         if ($this->detectControllers !== false) {
-            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $event);
+            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $resolverEvent);
         }
-        $actions = $event->getResolvedActions();
+        $actions = $resolverEvent->getResolvedActions();
 
         foreach ($actions as $action) {
             if ($this->hasController($action['controller'])) {
                 // handle everything over CI
                 $event->getRequest()->setLocale($action['locale']);
+                // add debug information
+                $event->getRequest()->attributes->set('_route',
+                    sprintf('CI[%s::%s]', $action['controller'], $action['method']));
                 $event->setResponse($this->container->get('ci')->getResponse($event->getRequest()));
                 $event->stopPropagation();
                 break;

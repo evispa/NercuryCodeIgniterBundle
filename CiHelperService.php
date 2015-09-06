@@ -114,8 +114,8 @@ class CiHelperService {
                 throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
             }
 
-            $system_path = $this->getRelativePath($root_path, $this->getSystemPath()).'/';
-            $application_folder = $this->getRelativePath($root_path, $this->getAppPath());
+            $system_path = $this->getSystemPath() . '/';
+            $application_folder = $this->getAppPath() . '/';
 
             if ($script_file === __FILE__) {
                 $script_file = $root_path . '/app.php';
@@ -124,7 +124,7 @@ class CiHelperService {
             }
 
             $environment = $this->kernel->getEnvironment();
-            $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
+            $environmentMap = ['dev' => 'development', 'test' => 'testing', 'prod' => 'production'];
             if(array_key_exists($environment, $environmentMap)) {
                 $environment = $environmentMap[$environment];
             }
@@ -145,23 +145,26 @@ class CiHelperService {
             // Path to the system folder
             define('BASEPATH', str_replace("\\", "/", $system_path));
 
-            // Path to the front controller (this file)
-            define('FCPATH', str_replace(SELF, '', __FILE__));
-
             // Name of the "system folder"
             define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
 
+            define('APPPATH', $application_folder . '/');
 
-            // The path to the "application" folder
-            if (is_dir($application_folder)) {
-                define('APPPATH', $application_folder . '/');
-            } else {
-                if (!is_dir(BASEPATH . $application_folder . '/')) {
-                    exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
-                }
+            // Path to the front controller (this file)
+            define('FCPATH', $application_folder . '../');
 
-                define('APPPATH', BASEPATH . $application_folder . '/');
-            }
+//            if (!defined('APPPATH')) {
+//                // The path to the "application" folder
+//                if (is_dir($application_folder)) {
+//                    define('APPPATH', $application_folder . '/');
+//                } else {
+//                    if (!is_dir(BASEPATH . $application_folder . '/')) {
+//                        exit("Your application folder path does not appear to be set correctly. Please open the following file and correct this: " . SELF);
+//                    }
+//
+//                    define('APPPATH', BASEPATH . $application_folder . '/');
+//                }
+//            }
 
             $this->paths_initalized = true;
         }

@@ -59,7 +59,15 @@ class DefaultCiActionResolver
     public function onActionResolveEvent(CiActionResolveEvent $event)
     {
         $path = $event->getRequest()->getPathInfo();
-        $parts = explode('/', substr($path, 1));
+        $part = (string)substr($path, 1);
+        if ($part === '') {
+            $part = 'home/';
+        }
+
+        $parts = explode('/', $part);
+        if(count($parts) === 1) {
+            $parts[] = '';
+        }
         $indexOfFirst = 0;
 
         if (count($parts) > 1) {
