@@ -19,113 +19,127 @@
 namespace Nercury\CodeIgniterBundle;
 
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Debug\ExceptionHandler;
+use Symfony\Component\HttpKernel\Kernel;
+use Monolog\Logger;
 
 /**
  * Description of CiHelperService
  *
  * @author nercury
  */
-class CiHelperService {
-
+class CiHelperService
+{
     /**
-     * @var boolean
+     * @var bool
      */
     protected $detectControllers;
 
     /**
-     * @var \Monolog\Logger
+     * @var Logger
      */
     protected $logger;
 
     /**
      *
-     * @var \Symfony\Component\HttpKernel\Kernel
+     * @var Kernel
      */
     protected $kernel;
 
     /**
      *
-     * @var \Symfony\Component\EventDispatcher\EventDispatcher
+     * @var EventDispatcherInterface
      */
-    protected $event_dispatcher;
-    protected $app_path = false;
-    protected $system_path = false;
+    protected $eventDispatcher;
 
-    public function __construct($detectControllers, $applicationPath, $systemPath, $logger, $kernel, $event_dispatcher) {
+    /**
+     * @var string
+     */
+    protected $appPath;
+
+    /**
+     * @var string
+     */
+    protected $systemPath;
+
+    /**
+     * @var bool
+     */
+    private $pathsInitialized = false;
+
+    /**
+     * @var bool
+     */
+    private $overrideControllerClass = false;
+
+    /**
+     * @var bool
+     */
+    private static $ciLoaded = false;
+
+    public function __construct(
+        $detectControllers,
+        $applicationPath,
+        $systemPath,
+        Logger $logger,
+        Kernel $kernel,
+        EventDispatcherInterface $eventDispatcher
+    ) {
         $this->detectControllers = $detectControllers;
         $this->kernel = $kernel;
         $this->logger = $logger;
-        $this->event_dispatcher = $event_dispatcher;
-        $this->app_path = realpath($applicationPath);
-        $this->system_path = realpath($systemPath);
+        $this->eventDispatcher = $eventDispatcher;
+        $this->appPath = realpath($applicationPath);
+        $this->systemPath = realpath($systemPath);
     }
-
-    protected function isConfigValid() {
-        return $this->app_path !== false && $this->system_path !== false;
-    }
-
-    function getRelativePath($from, $to)
-    {
-        $from = explode('/', $from);
-        $to = explode('/', $to);
-        $relPath = $to;
-
-        foreach ($from as $depth => $dir) {
-            // find first non-matching dir
-            if ($dir === $to[$depth]) {
-                // ignore this directory
-                array_shift($relPath);
-            } else {
-                // get number of remaining dirs to $from
-                $remaining = count($from) - $depth;
-                if ($remaining > 1) {
-                    // add traversals up to first matching dir
-                    $padLength = (count($relPath) + $remaining - 1) * -1;
-                    $relPath = array_pad($relPath, $padLength, '..');
-                    break;
-                } else {
-                    $relPath[0] = $relPath[0];
-                }
-            }
-        }
-        return implode('/', $relPath);
-    }
-
-    private $paths_initalized = false;
 
     /**
-     * Initialize code igniter system paths and defines
+     * @return bool
+     */
+    protected function isConfigValid()
+    {
+        return !is_null($this->appPath) && !is_null($this->systemPath);
+    }
+
+    /**
+     * Initialize CodeIgniter system paths and defines
      *
      * @param Request $request
-     * @throws Exception
+     *
+     * @throws \UnexpectedValueException
      */
-    public function setCiPaths(Request $request = null) {
+    public function setCiPaths(Request $request = null)
+    {
         if (!$this->isConfigValid()) {
-            throw new \Exception('Code Igniter configuration is not valid.');
+            throw new \UnexpectedValueException(
+                'Bundle configuration is not valid. You need to specify application_path and system_path in config.yml'
+            );
         }
 
-        if ($this->paths_initalized === false) {
-            $script_file = $request !== null
-                ? '.' . $request->getBasePath() . $request->getScriptName()
+        if ($this->pathsInitialized === false) {
+            $scriptFile = $request !== null ?
+                '.'.$request->getBasePath().$request->getScriptName()
                 : __FILE__;
 
-            $root_path = realpath($this->kernel->getRootDir().'/..');
-            if ($root_path === false) {
+            $rootPath = realpath($this->kernel->getRootDir().'/..');
+            if ($rootPath === false) {
                 throw new \LogicException('Nercury CI bundle was expecting to find kernel root dir in /app directory.');
             }
 
-            $system_path = $this->getSystemPath() . '/';
-            $application_folder = $this->getAppPath() . '/';
+            $systemPath = $this->getSystemPath().'/';
+            $applicationFolder = $this->getAppPath().'/';
 
-            if ($script_file === __FILE__) {
-                $script_file = $root_path . '/app.php';
-                $system_path = realpath($root_path.'/'.$system_path).'/';
-                $application_folder = realpath($root_path.'/'.$application_folder);
+            if ($scriptFile === __FILE__) {
+                $scriptFile = $rootPath.'/app.php';
+                $rootPath = realpath($rootPath.'/'.$systemPath).'/';
+                $applicationFolder = realpath($rootPath.'/'.$applicationFolder);
             }
 
             $environment = $this->kernel->getEnvironment();
             $environmentMap = ['dev' => 'development', 'test' => 'testing', 'prod' => 'production'];
-            if(array_key_exists($environment, $environmentMap)) {
+            if (array_key_exists($environment, $environmentMap)) {
                 $environment = $environmentMap[$environment];
             }
             define('ENVIRONMENT', $environment);
@@ -136,22 +150,22 @@ class CiHelperService {
             * -------------------------------------------------------------------
             */
             // The name of THIS file
-            define('SELF', pathinfo($script_file, PATHINFO_BASENAME));
+            define('SELF', pathinfo($scriptFile, PATHINFO_BASENAME));
 
             // The PHP file extension
             // this global constant is deprecated.
             define('EXT', '.php');
 
             // Path to the system folder
-            define('BASEPATH', str_replace("\\", "/", $system_path));
+            define('BASEPATH', str_replace("\\", "/", $systemPath));
 
             // Name of the "system folder"
             define('SYSDIR', trim(strrchr(trim(BASEPATH, '/'), '/'), '/'));
 
-            define('APPPATH', $application_folder . '/');
+            define('APPPATH', $applicationFolder.'/');
 
             // Path to the front controller (this file)
-            define('FCPATH', $application_folder . '../');
+            define('FCPATH', $applicationFolder.'../');
 
 //            if (!defined('APPPATH')) {
 //                // The path to the "application" folder
@@ -166,31 +180,38 @@ class CiHelperService {
 //                }
 //            }
 
-            $this->paths_initalized = true;
+            $this->pathsInitialized = true;
         }
     }
 
-    public function setBaseControllerOverrideClass($className) {
-        $this->override_controller_class = $className;
+    /**
+     * @param string $className
+     *
+     * @return self
+     */
+    public function setBaseControllerOverrideClass($className)
+    {
+        $this->overrideControllerClass = $className;
+
+        return $this;
     }
 
-    private $override_controller_class = false;
-
-    private static $ci_loaded = false;
-
     /**
+     * @param bool $useFakeController
      *
-     * @throws Exception
+     * @return \CI_Controller
+     * @throws \Exception
      */
-    public function getInstance($useFakeController = true) {
+    public function getInstance($useFakeController = true)
+    {
         $this->unsetNoticeErrorLevel();
 
         if (function_exists('get_instance')) {
-            self::$ci_loaded = true;
+            self::$ciLoaded = true;
         }
 
-        if (!self::$ci_loaded) {
-            self::$ci_loaded = true;
+        if (!self::$ciLoaded) {
+            self::$ciLoaded = true;
 
             if ($this->kernel->getContainer()->isScopeActive('request')) {
                 $this->setCiPaths($this->kernel->getContainer()->get('request'));
@@ -199,7 +220,12 @@ class CiHelperService {
             }
 
             require_once __DIR__.'/ci_bootstrap.php';
-            \ci_bootstrap($this->kernel, $this->override_controller_class, $useFakeController); // load without calling code igniter method but initiating CI class
+
+            \ci_bootstrap(
+                $this->kernel,
+                $this->overrideControllerClass,
+                $useFakeController
+            ); // load without calling CodeIgniter method but initiating CI class
         }
 
         return \get_instance();
@@ -209,14 +235,20 @@ class CiHelperService {
      * Return response from CI
      *
      * @param Request $request
-     * @return \Symfony\Component\HttpFoundation\Response
-     * @throws Exception
+     *
+     * @return Response
+     *
+     * @throws \Exception
      */
-    public function getResponse(Request $request) {
-        if (self::$ci_loaded)
-            throw new \Exception('Can not create response for CodeIgniter controller, because another controller was already loaded.');
+    public function getResponse(Request $request)
+    {
+        if (self::$ciLoaded) {
+            throw new \Exception(
+                'Can not create response for CodeIgniter controller, because another controller was already loaded.'
+            );
+        }
 
-        self::$ci_loaded = true;
+        self::$ciLoaded = true;
 
         $this->unsetNoticeErrorLevel();
         $this->setCiPaths($request);
@@ -236,16 +268,13 @@ class CiHelperService {
              */
             \ci_bootstrap($this->kernel);
 
-            $output = ob_get_clean();
+            $response = new Response(ob_get_clean());
         } catch (\Exception $e) {
-            $output = ob_get_clean();
-
-            $handler = new \Symfony\Component\HttpKernel\Debug\ExceptionHandler();
-
-            return $handler->createResponse($e);
+            ob_get_clean();
+            $response = (new ExceptionHandler())->createResponse($e);
         }
 
-        return new \Symfony\Component\HttpFoundation\Response($output);
+        return $response;
     }
 
     /**
@@ -253,8 +282,9 @@ class CiHelperService {
      *
      * @return string Returns FALSE if path was not defined in config
      */
-    public function getAppPath() {
-        return $this->app_path;
+    public function getAppPath()
+    {
+        return $this->appPath;
     }
 
     /**
@@ -262,19 +292,25 @@ class CiHelperService {
      *
      * @return string Returns FALSE if path was not defined in config
      */
-    public function getSystemPath() {
-        return $this->system_path;
+    public function getSystemPath()
+    {
+        return $this->systemPath;
     }
 
-    public function unsetNoticeErrorLevel(){
+    /**
+     * @return self
+     */
+    public function unsetNoticeErrorLevel()
+    {
         // code igniter likes notices
-        $errorlevel = error_reporting();
-        if ($errorlevel > 0) {
-            error_reporting($errorlevel & ~ E_NOTICE);
-        } elseif ($errorlevel < 0) {
-            error_reporting(E_ALL & ~ E_NOTICE);
+        $errorLevel = error_reporting();
+        if ($errorLevel > 0) {
+            error_reporting($errorLevel & ~E_NOTICE);
+        } elseif ($errorLevel < 0) {
+            error_reporting(E_ALL & ~E_NOTICE);
         }
-    }
 
+        return $this;
+    }
 }
 

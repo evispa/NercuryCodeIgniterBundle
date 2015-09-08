@@ -18,15 +18,12 @@
 
 namespace Nercury\CodeIgniterBundle;
 
-use Nercury\CodeIgniterBundle\CiActionResolveEvent;
-
 /**
  * This is default event listener to resolve CI actions.
  * It resolves /{controller}/{function} action
  */
 class DefaultCiActionResolver
 {
-
     protected $defaultLocale;
 
     public function __construct($defaultLocale)
@@ -36,18 +33,18 @@ class DefaultCiActionResolver
 
     public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale)
     {
-        $controller_path = '';
+        $controllerPath = '';
         for ($i = $indexOfFirst; $i < count($pathParts) && $i < 10; $i++) {
-            if ($controller_path == '') {
-                $controller_path = $pathParts[$i];
+            if ($controllerPath == '') {
+                $controllerPath = $pathParts[$i];
             } else {
-                $controller_path .= '/' . $pathParts[$i];
+                $controllerPath .= '/'.$pathParts[$i];
             }
             $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
             if ($next !== false) {
-                $event->addPossibleAction($controller_path, $next, $locale);
+                $event->addPossibleAction($controllerPath, $next, $locale);
             }
-            $event->addPossibleAction($controller_path, 'index', $locale);
+            $event->addPossibleAction($controllerPath, 'index', $locale);
         }
     }
 
@@ -59,13 +56,13 @@ class DefaultCiActionResolver
     public function onActionResolveEvent(CiActionResolveEvent $event)
     {
         $path = $event->getRequest()->getPathInfo();
-        $part = (string)substr($path, 1);
+        $part = (string) substr($path, 1);
         if ($part === '') {
             $part = 'home/';
         }
 
         $parts = explode('/', $part);
-        if(count($parts) === 1) {
+        if (count($parts) === 1) {
             $parts[] = '';
         }
         $indexOfFirst = 0;

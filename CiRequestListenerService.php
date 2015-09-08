@@ -18,6 +18,7 @@
 
 namespace Nercury\CodeIgniterBundle;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -29,17 +30,22 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CiRequestListenerService
 {
-
     /**
-     * @var \Symfony\Component\DependencyInjection\Container
+     * @var ContainerInterface
      */
     private $container;
 
+    /**
+     * @var string
+     */
     private $appPath;
 
+    /**
+     * @var bool
+     */
     private $detectControllers;
 
-    public function __construct($container, $appPath, $detectControllers)
+    public function __construct(ContainerInterface $container, $appPath, $detectControllers)
     {
         $this->container = $container;
         $this->appPath = $appPath;
@@ -50,18 +56,19 @@ class CiRequestListenerService
      * Get physical controller file name based on it's name
      *
      * @param string $controllerName
+     *
      * @return string
      */
     public function getControllerFile($controllerName)
     {
-        return $this->appPath . '/controllers/' . $controllerName . '.php';
+        return $this->appPath.'/controllers/'.$controllerName.'.php';
     }
 
     public function hasController($controller)
     {
-        $controller_file = $this->getControllerFile($controller);
+        $controllerFile = $this->getControllerFile($controller);
 
-        if (file_exists($controller_file)) {
+        if (file_exists($controllerFile)) {
             return true;
         }
     }
@@ -89,8 +96,10 @@ class CiRequestListenerService
                 // handle everything over CI
                 $event->getRequest()->setLocale($action['locale']);
                 // add debug information
-                $event->getRequest()->attributes->set('_route',
-                    sprintf('CI[%s::%s]', $action['controller'], $action['method']));
+                $event->getRequest()->attributes->set(
+                    '_route',
+                    sprintf('CI[%s::%s]', $action['controller'], $action['method'])
+                );
                 $event->setResponse($this->container->get('ci')->getResponse($event->getRequest()));
                 $event->stopPropagation();
                 break;
