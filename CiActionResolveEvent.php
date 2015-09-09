@@ -19,54 +19,60 @@
 namespace Nercury\CodeIgniterBundle;
 
 use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\HttpFoundation\Request;
 
-class CiActionResolveEvent extends Event {
-
+class CiActionResolveEvent extends Event
+{
     /**
      *
-     * @var Request 
+     * @var Request
      */
     protected $request;
-    
+
     /**
      * Possible CI controllers and methods
-     * 
-     * @var array 
+     *
+     * @var array
      */
-    protected $possible_methods = array();
-    
-    public function __construct($request) {
+    protected $possibleMethods = [];
+
+    public function __construct(Request $request)
+    {
         $this->request = $request;
     }
-    
+
     /**
      *
-     * @return \Symfony\Component\HttpFoundation\Request 
+     * @return Request
      */
-    public function getRequest() {
+    public function getRequest()
+    {
         return $this->request;
     }
-    
+
     /**
      * Set possible controller and method for current request
-     * 
+     *
      * @param string $controller
-     * @param string $method 
+     * @param string $method
+     * @param string $locale
      */
-    public function addPossibleAction($controller, $method, $locale) {
-        $this->possible_methods[] = array(
+    public function addPossibleAction($controller, $method, $locale)
+    {
+        $this->possibleMethods[] = [
             'controller' => $controller,
             'method' => $method,
             'locale' => $locale,
-        );
+        ];
     }
-    
+
     /**
      * Get resolved possible controllers and methods
-     * 
+     *
      * @return array
      */
-    public function getResolvedActions() {
-        return $this->possible_methods;
+    public function getResolvedActions()
+    {
+        return $this->possibleMethods;
     }
 }

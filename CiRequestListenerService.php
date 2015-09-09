@@ -18,8 +18,8 @@
 
 namespace Nercury\CodeIgniterBundle;
 
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Listens to kernel request event and gets response from CI in case
@@ -29,41 +29,26 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class CiRequestListenerService
 {
-
     /**
-     * @var \Symfony\Component\DependencyInjection\Container
+     * @var ContainerInterface
      */
     private $container;
 
-    private $appPath;
-
-    private $detectControllers;
-
-    public function __construct($container, $appPath, $detectControllers)
-    {
-        $this->container = $container;
-        $this->appPath = $appPath;
-        $this->detectControllers = $detectControllers;
-    }
+    /**
+     * @var CiControllerChecker
+     */
+    private $controllerChecker;
 
     /**
-     * Get physical controller file name based on it's name
-     *
-     * @param string $controllerName
-     * @return string
+     * @var bool
      */
-    public function getControllerFile($controllerName)
-    {
-        return $this->appPath . '/controllers/' . $controllerName . '.php';
-    }
+    private $detectControllers;
 
-    public function hasController($controller)
+    public function __construct(ContainerInterface $container, CiControllerChecker $controllerChecker, $detectControllers)
     {
-        $controller_file = $this->getControllerFile($controller);
-
-        if (file_exists($controller_file)) {
-            return true;
-        }
+        $this->container = $container;
+        $this->controllerChecker = $controllerChecker;
+        $this->detectControllers = $detectControllers;
     }
 
     /**
@@ -74,20 +59,25 @@ class CiRequestListenerService
      */
     public function onKernelRequest(GetResponseEvent $event)
     {
-        if ($event->getRequestType() == \Symfony\Component\HttpKernel\HttpKernelInterface::SUB_REQUEST) {
+        if (!$event->isMasterRequest()) {
             return;
         }
 
-        $event = new CiActionResolveEvent($event->getRequest());
+        $resolverEvent = new CiActionResolveEvent($event->getRequest());
         if ($this->detectControllers !== false) {
-            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $event);
+            $this->container->get('event_dispatcher')->dispatch('nercury.ci_action_resolve', $resolverEvent);
         }
-        $actions = $event->getResolvedActions();
+        $actions = $resolverEvent->getResolvedActions();
 
         foreach ($actions as $action) {
-            if ($this->hasController($action['controller'])) {
+            if ($this->controllerChecker->isControllerExist($action['controller'])) {
                 // handle everything over CI
                 $event->getRequest()->setLocale($action['locale']);
+                // add debug information
+                $event->getRequest()->attributes->set(
+                    '_route',
+                    sprintf('CI[%s::%s]', $action['controller'], $action['method'])
+                );
                 $event->setResponse($this->container->get('ci')->getResponse($event->getRequest()));
                 $event->stopPropagation();
                 break;

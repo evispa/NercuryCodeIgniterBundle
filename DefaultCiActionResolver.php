@@ -18,36 +18,48 @@
 
 namespace Nercury\CodeIgniterBundle;
 
-use Nercury\CodeIgniterBundle\CiActionResolveEvent;
-
 /**
  * This is default event listener to resolve CI actions.
  * It resolves /{controller}/{function} action
  */
 class DefaultCiActionResolver
 {
-
+    /**
+     * @var string
+     */
     protected $defaultLocale;
 
-    public function __construct($defaultLocale)
+    /**
+     * @var CiControllerChecker
+     */
+    protected $controllerChecker;
+
+    public function __construct(CiControllerChecker $controllerChecker, $defaultLocale)
     {
         $this->defaultLocale = $defaultLocale;
+        $this->controllerChecker = $controllerChecker;
     }
 
     public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale)
     {
-        $controller_path = '';
+        $controllerPath = '';
         for ($i = $indexOfFirst; $i < count($pathParts) && $i < 10; $i++) {
-            if ($controller_path == '') {
-                $controller_path = $pathParts[$i];
+            if ($controllerPath == '') {
+                $controllerPath = $pathParts[$i];
             } else {
-                $controller_path .= '/' . $pathParts[$i];
+                $controllerPath .= '/'.$pathParts[$i];
             }
             $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
-            if ($next !== false) {
-                $event->addPossibleAction($controller_path, $next, $locale);
+
+            if (!$this->controllerChecker->isControllerExist($controllerPath)) {
+                continue;
             }
-            $event->addPossibleAction($controller_path, 'index', $locale);
+
+            $event->addPossibleAction(
+                $controllerPath,
+                $next !== false ? $next : 'index',
+                $locale
+            );
         }
     }
 
@@ -59,7 +71,15 @@ class DefaultCiActionResolver
     public function onActionResolveEvent(CiActionResolveEvent $event)
     {
         $path = $event->getRequest()->getPathInfo();
-        $parts = explode('/', substr($path, 1));
+        $part = (string) substr($path, 1);
+        if ($part === '') {
+            $part = 'home/';
+        }
+
+        $parts = explode('/', $part);
+        if (count($parts) === 1) {
+            $parts[] = '';
+        }
         $indexOfFirst = 0;
 
         if (count($parts) > 1) {
