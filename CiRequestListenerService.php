@@ -20,7 +20,6 @@ namespace Nercury\CodeIgniterBundle;
 
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Listens to kernel request event and gets response from CI in case
@@ -36,41 +35,20 @@ class CiRequestListenerService
     private $container;
 
     /**
-     * @var string
+     * @var CiControllerChecker
      */
-    private $appPath;
+    private $controllerChecker;
 
     /**
      * @var bool
      */
     private $detectControllers;
 
-    public function __construct(ContainerInterface $container, $appPath, $detectControllers)
+    public function __construct(ContainerInterface $container, CiControllerChecker $controllerChecker, $detectControllers)
     {
         $this->container = $container;
-        $this->appPath = $appPath;
+        $this->controllerChecker = $controllerChecker;
         $this->detectControllers = $detectControllers;
-    }
-
-    /**
-     * Get physical controller file name based on it's name
-     *
-     * @param string $controllerName
-     *
-     * @return string
-     */
-    public function getControllerFile($controllerName)
-    {
-        return $this->appPath.'/controllers/'.$controllerName.'.php';
-    }
-
-    public function hasController($controller)
-    {
-        $controllerFile = $this->getControllerFile($controller);
-
-        if (file_exists($controllerFile)) {
-            return true;
-        }
     }
 
     /**
@@ -92,7 +70,7 @@ class CiRequestListenerService
         $actions = $resolverEvent->getResolvedActions();
 
         foreach ($actions as $action) {
-            if ($this->hasController($action['controller'])) {
+            if ($this->controllerChecker->isControllerExist($action['controller'])) {
                 // handle everything over CI
                 $event->getRequest()->setLocale($action['locale']);
                 // add debug information

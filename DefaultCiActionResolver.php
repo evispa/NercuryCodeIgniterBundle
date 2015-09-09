@@ -24,11 +24,20 @@ namespace Nercury\CodeIgniterBundle;
  */
 class DefaultCiActionResolver
 {
+    /**
+     * @var string
+     */
     protected $defaultLocale;
 
-    public function __construct($defaultLocale)
+    /**
+     * @var CiControllerChecker
+     */
+    protected $controllerChecker;
+
+    public function __construct(CiControllerChecker $controllerChecker, $defaultLocale)
     {
         $this->defaultLocale = $defaultLocale;
+        $this->controllerChecker = $controllerChecker;
     }
 
     public function addPossibleRoutes(CiActionResolveEvent $event, &$pathParts, $indexOfFirst, $locale)
@@ -41,10 +50,16 @@ class DefaultCiActionResolver
                 $controllerPath .= '/'.$pathParts[$i];
             }
             $next = $i < count($pathParts) - 1 ? $pathParts[$i + 1] : false;
-            if ($next !== false) {
-                $event->addPossibleAction($controllerPath, $next, $locale);
+
+            if (!$this->controllerChecker->isControllerExist($controllerPath)) {
+                continue;
             }
-            $event->addPossibleAction($controllerPath, 'index', $locale);
+
+            $event->addPossibleAction(
+                $controllerPath,
+                $next !== false ? $next : 'index',
+                $locale
+            );
         }
     }
 
