@@ -59,11 +59,11 @@ class CiActionResolveEvent extends Event
      */
     public function addPossibleAction($controller, $method, $locale)
     {
-        $this->possibleMethods[] = [
+        $this->possibleMethods[] = array(
             'controller' => $controller,
             'method' => $method,
             'locale' => $locale,
-        ];
+        );
     }
 
     /**
