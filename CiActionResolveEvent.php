@@ -34,7 +34,7 @@ class CiActionResolveEvent extends Event
      *
      * @var array
      */
-    protected $possibleMethods = [];
+    protected $possibleMethods = array();
 
     public function __construct(Request $request)
     {
