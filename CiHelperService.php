@@ -138,7 +138,7 @@ class CiHelperService
             }
 
             $environment = $this->kernel->getEnvironment();
-            $environmentMap = ['dev' => 'development', 'test' => 'testing', 'prod' => 'production'];
+            $environmentMap = array('dev' => 'development', 'test' => 'testing', 'prod' => 'production');
             if (array_key_exists($environment, $environmentMap)) {
                 $environment = $environmentMap[$environment];
             }
