@@ -271,7 +271,7 @@ class CiHelperService
             $response = new Response(ob_get_clean());
         } catch (\Exception $e) {
             ob_get_clean();
-            $handler = new ExceptionHandler();
+            $handler = new ExceptionHandler($this->kernel->isDebug());
             $response = $handler->createResponse($e);
         }
 
