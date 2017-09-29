@@ -254,26 +254,20 @@ class CiHelperService
         $this->setCiPaths($request);
 
         require_once __DIR__.'/ci_bootstrap.php';
+        
+        ob_start();
 
-        try {
-            ob_start();
+        /*
+         * --------------------------------------------------------------------
+         * LOAD THE BOOTSTRAP FILE
+         * --------------------------------------------------------------------
+         *
+         * And away we go...
+         *
+         */
+        \ci_bootstrap($this->kernel);
 
-            /*
-             * --------------------------------------------------------------------
-             * LOAD THE BOOTSTRAP FILE
-             * --------------------------------------------------------------------
-             *
-             * And away we go...
-             *
-             */
-            \ci_bootstrap($this->kernel);
-
-            $response = new Response(ob_get_clean());
-        } catch (\Exception $e) {
-            ob_get_clean();
-            $handler = new ExceptionHandler($this->kernel->isDebug());
-            $response = $handler->createResponse($e);
-        }
+        $response = new Response(ob_get_clean());
 
         return $response;
     }
