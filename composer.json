@@ -4,7 +4,7 @@
     "keywords":     ["codeigniter", "code-igniter", "migration", "ci"],
     "homepage": "https://github.com/Nercury/NercuryCodeIgniterBundle",
     "type":         "symfony-bundle",
-    "license":      "Apache",
+    "license":      "MIT",
     "authors": [
     {
         "name":   "Nerijus Arlauskas",
