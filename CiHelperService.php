@@ -267,11 +267,30 @@ class CiHelperService
          */
         \ci_bootstrap($this->kernel);
 
-        $response = new Response(ob_get_clean());
+        $response = new Response(ob_get_clean(), http_response_code(), $this->getHeaders());
 
         return $response;
     }
 
+    /**
+     * Get current response headers.
+     *
+     * @return array
+     */
+    private function getHeaders()
+    {
+        $list = array();
+
+        $headers = headers_list();
+
+        foreach ($headers as $header) {
+            $header = explode(':', $header, 2);
+            $list[array_shift($header)] = trim(implode(':', $header));
+        }
+
+        return $list;
+    }
+    
     /**
      * Returns CI APPPATH
      *
