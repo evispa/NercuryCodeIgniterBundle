@@ -254,7 +254,7 @@ class CiHelperService
         $this->setCiPaths($request);
 
         require_once __DIR__.'/ci_bootstrap.php';
-        
+
         ob_start();
 
         /*
@@ -267,7 +267,7 @@ class CiHelperService
          */
         \ci_bootstrap($this->kernel);
 
-        $response = new Response(ob_get_clean(), http_response_code(), $this->getHeaders());
+        $response = new Response(ob_get_clean(), http_response_code(), $this->extractHeaders());
 
         return $response;
     }
@@ -277,7 +277,7 @@ class CiHelperService
      *
      * @return array
      */
-    private function getHeaders()
+    private function extractHeaders()
     {
         $list = array();
 
@@ -285,12 +285,14 @@ class CiHelperService
 
         foreach ($headers as $header) {
             $header = explode(':', $header, 2);
-            $list[array_shift($header)] = trim(implode(':', $header));
+            $name = array_shift($header);
+            header_remove($name);
+            $list[$name] = trim(implode(':', $header));
         }
 
         return $list;
     }
-    
+
     /**
      * Returns CI APPPATH
      *
