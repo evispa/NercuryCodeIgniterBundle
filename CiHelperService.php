@@ -286,9 +286,13 @@ class CiHelperService
         foreach ($headers as $header) {
             $header = explode(':', $header, 2);
             $name = array_shift($header);
-            header_remove($name);
-            $list[$name] = trim(implode(':', $header));
+            if (!isset($list[$name])) {
+                $list[$name] = [];
+            }
+            $list[$name][] = trim(implode(':', $header));
         }
+
+        header_remove();
 
         return $list;
     }
